@@ -2,24 +2,37 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
-    // Handle PDF.js worker
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "pdfjs-dist/build/pdf.worker.js": "pdfjs-dist/build/pdf.worker.min.js",
-    };
+    // Handle PDF.js worker for client-side
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "pdfjs-dist/build/pdf.worker.js": "pdfjs-dist/build/pdf.worker.min.js",
+      };
+    }
 
-    // Exclude browser-specific modules from server bundle
+    // Completely exclude browser-specific modules from server bundle
     if (isServer) {
       config.externals = config.externals || [];
-      config.externals.push({
-        "pdfjs-dist": "commonjs pdfjs-dist",
-        "tesseract.js": "commonjs tesseract.js",
-      });
+      config.externals.push(
+        "pdfjs-dist",
+        "tesseract.js",
+        "canvas",
+        /^pdfjs-dist\/.*/,
+        /^tesseract\.js\/.*/
+      );
+
+      // Ignore these modules during server-side bundling
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        canvas: false,
+        fs: false,
+        path: false,
+      };
     }
 
     return config;
   },
-  serverExternalPackages: ["pdfjs-dist", "tesseract.js"],
+  serverExternalPackages: ["pdfjs-dist", "tesseract.js", "canvas"],
 };
 
 export default nextConfig;

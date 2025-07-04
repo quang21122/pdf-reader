@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { pdfUrl } = await request.json();
+    const body = await request.json();
+    const pdfUrl = body?.pdfUrl;
 
     if (!pdfUrl) {
       return NextResponse.json(
@@ -11,22 +12,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // OCR processing should be done on the client side due to browser-specific APIs
-    // This endpoint serves as a placeholder for future server-side OCR implementation
+    // OCR processing is handled entirely on the client side
+    // This endpoint provides information about client-side OCR capabilities
     return NextResponse.json(
       {
-        error:
-          "OCR processing must be done on the client side. Please use the client-side OCR utilities.",
-        suggestion:
-          "Use the extractTextFromPDFWithOCR function from @/utils/ocrUtils in your React components.",
+        message:
+          "OCR processing is handled client-side for privacy and performance",
         clientSideOnly: true,
+        instructions: {
+          component:
+            "Use the OCRProcessor component from @/components/ocr/OCRProcessor",
+          function: "Use extractTextFromPDFWithOCR from @/utils/ocrUtils",
+          demo: "Visit /ocr-demo to see OCR functionality in action",
+        },
+        supportedLanguages: [
+          { code: "eng", name: "English" },
+          { code: "vie", name: "Vietnamese" },
+          { code: "fra", name: "French" },
+          { code: "deu", name: "German" },
+          { code: "spa", name: "Spanish" },
+          { code: "chi_sim", name: "Chinese (Simplified)" },
+          { code: "jpn", name: "Japanese" },
+          { code: "kor", name: "Korean" },
+        ],
       },
-      { status: 501 }
+      { status: 200 }
     );
   } catch (error) {
     console.error("OCR API Error:", error);
     return NextResponse.json(
-      { error: "Failed to process OCR request" },
+      { error: "Failed to process request" },
       { status: 500 }
     );
   }
@@ -34,8 +49,25 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    message: "OCR API endpoint",
-    supportedLanguages: ["eng", "vie", "fra", "deu", "spa"],
-    methods: ["POST"],
+    message: "OCR API Information Endpoint",
+    description:
+      "This endpoint provides information about client-side OCR capabilities",
+    clientSideOnly: true,
+    supportedLanguages: [
+      "English (eng)",
+      "Vietnamese (vie)",
+      "French (fra)",
+      "German (deu)",
+      "Spanish (spa)",
+      "Chinese Simplified (chi_sim)",
+      "Japanese (jpn)",
+      "Korean (kor)",
+    ],
+    usage: {
+      component: "Import OCRProcessor from @/components/ocr/OCRProcessor",
+      function: "Import extractTextFromPDFWithOCR from @/utils/ocrUtils",
+      demo: "Visit /ocr-demo for a working example",
+    },
+    methods: ["GET", "POST"],
   });
 }

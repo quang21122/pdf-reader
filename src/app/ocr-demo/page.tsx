@@ -12,7 +12,7 @@ import {
   Alert,
 } from "@mui/material";
 import { Upload as UploadIcon } from "@mui/icons-material";
-import { OCRResult } from "@/utils/ocrUtils";
+import { OCRResult } from "@/utils/ocrUtils.client";
 
 // Dynamically import OCRProcessor to avoid SSR issues
 const OCRProcessor = dynamic(() => import("@/components/ocr/OCRProcessor"), {

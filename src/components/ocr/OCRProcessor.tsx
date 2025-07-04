@@ -16,7 +16,7 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import { CloudUpload as UploadIcon } from "@mui/icons-material";
-import { OCRResult, OCRProgress } from "@/utils/ocrUtils";
+import { OCRResult, OCRProgress } from "@/utils/ocrUtils.client";
 
 // Dynamically import OCR utilities to avoid SSR issues
 const OCRResultComponent = dynamic(() => import("./OCRResult"), {
@@ -67,8 +67,10 @@ export default function OCRProcessor({ pdfUrl, onResults }: OCRProcessorProps) {
     setProgress(null);
 
     try {
-      // Dynamically import OCR utilities to avoid SSR issues
-      const { extractTextFromPDFWithOCR } = await import("@/utils/ocrUtils");
+      // Dynamically import client-only OCR utilities
+      const { extractTextFromPDFWithOCR } = await import(
+        "@/utils/ocrUtils.client"
+      );
 
       const ocrResults = await extractTextFromPDFWithOCR(pdfUrl, {
         language,
