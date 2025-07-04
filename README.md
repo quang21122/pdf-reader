@@ -10,7 +10,7 @@ A modern PDF reader application built with Next.js, featuring OCR capabilities, 
 - **Notes & Highlights**: Add personal notes and highlight important text
 - **User Authentication**: Secure login with Supabase Auth
 - **Responsive Design**: Works on desktop and mobile devices
-- **Dark Mode**: Automatic dark/light theme switching
+- **Dark Mode**: Automatic dark/light theme switching.
 
 ## 🛠️ Tech Stack
 
