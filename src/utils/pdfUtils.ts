@@ -5,6 +5,10 @@ if (typeof window !== "undefined") {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 }
 
+// Check if we're in a browser environment
+const isBrowser =
+  typeof window !== "undefined" && typeof document !== "undefined";
+
 /**
  * Extract text content from PDF file
  */
@@ -36,6 +40,13 @@ export async function pdfToImages(
   pdfUrl: string,
   scale: number = 2
 ): Promise<string[]> {
+  // Check if we're in a browser environment
+  if (!isBrowser) {
+    throw new Error(
+      "pdfToImages can only be used in a browser environment. Use server-side alternatives for Node.js."
+    );
+  }
+
   try {
     const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
     const images: string[] = [];
