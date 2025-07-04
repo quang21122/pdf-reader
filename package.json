@@ -10,7 +10,12 @@
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next out",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\" && exit 0",
+    "vercel-build": "npm run lint && npm run type-check && next build",
+    "deploy": "vercel --prod",
+    "deploy-preview": "vercel",
+    "pre-deploy": "node scripts/pre-deploy-check.js",
+    "deploy-safe": "npm run pre-deploy && npm run deploy"
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",

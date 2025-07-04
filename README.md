@@ -169,12 +169,35 @@ The app uses Supabase Auth with the following features:
 
 ## 📝 Available Scripts
 
-- `npm run dev` - Start development server
+### Development
+
+- `npm run dev` - Start development server with Turbopack
 - `npm run build` - Build for production
 - `npm run start` - Start production server
+
+### Quality Checks
+
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint errors
 - `npm run type-check` - Run TypeScript type checking
+
+### Deployment
+
+- `npm run vercel-build` - Build with quality checks
+- `npm run deploy` - Deploy to production
+- `npm run deploy-preview` - Deploy preview
+- `npm run pre-deploy` - Run all pre-deployment checks
+- `npm run deploy-safe` - Safe deploy with checks
+
+## 🚀 Auto Deployment
+
+This project is configured for automatic deployment to Vercel:
+
+- **Main branch** → Production deployment
+- **Pull requests** → Preview deployments
+- **Quality checks** run before every deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed setup instructions.
 
 ## 🔮 Future Enhancements
 
