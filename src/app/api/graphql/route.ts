@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server";
 
 // This is a placeholder for GraphQL endpoint
 // In a real implementation, you would either:
@@ -8,40 +8,49 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, variables } = await request.json()
+    // Parse request body but don't use variables for now since endpoint is not implemented
+    await request.json();
 
     // For now, return a placeholder response
     return NextResponse.json({
       data: null,
-      errors: [{
-        message: 'GraphQL endpoint not implemented yet. Please use Supabase REST API directly or configure Hasura/Postgraphile.',
-        extensions: {
-          code: 'NOT_IMPLEMENTED'
-        }
-      }]
-    })
-
+      errors: [
+        {
+          message:
+            "GraphQL endpoint not implemented yet. Please use Supabase REST API directly or configure Hasura/Postgraphile.",
+          extensions: {
+            code: "NOT_IMPLEMENTED",
+          },
+        },
+      ],
+    });
   } catch (error) {
-    console.error('GraphQL API Error:', error)
-    return NextResponse.json({
-      errors: [{
-        message: 'Internal server error',
-        extensions: {
-          code: 'INTERNAL_ERROR'
-        }
-      }]
-    }, { status: 500 })
+    console.error("GraphQL API Error:", error);
+    return NextResponse.json(
+      {
+        errors: [
+          {
+            message: "Internal server error",
+            extensions: {
+              code: "INTERNAL_ERROR",
+            },
+          },
+        ],
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET() {
   return NextResponse.json({
-    message: 'GraphQL endpoint',
-    status: 'Not implemented - Use Supabase REST API or configure external GraphQL service',
+    message: "GraphQL endpoint",
+    status:
+      "Not implemented - Use Supabase REST API or configure external GraphQL service",
     suggestions: [
-      'Use Hasura with Supabase: https://hasura.io/docs/latest/databases/postgres/supabase/',
-      'Use Postgraphile: https://www.graphile.org/postgraphile/',
-      'Use Supabase REST API directly'
-    ]
-  })
+      "Use Hasura with Supabase: https://hasura.io/docs/latest/databases/postgres/supabase/",
+      "Use Postgraphile: https://www.graphile.org/postgraphile/",
+      "Use Supabase REST API directly",
+    ],
+  });
 }
