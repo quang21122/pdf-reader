@@ -1,5 +1,4 @@
 import Tesseract from "tesseract.js";
-import { pdfToImages } from "./pdfUtils";
 
 export interface OCRProgress {
   status: string;
@@ -38,6 +37,9 @@ export async function extractTextFromPDFWithOCR(
   try {
     // Convert PDF to images
     onProgress?.({ status: "Converting PDF to images...", progress: 0 });
+
+    // Dynamically import pdfToImages to avoid server-side issues
+    const { pdfToImages } = await import("./pdfUtils");
     const images = await pdfToImages(pdfUrl);
 
     const results: OCRResult[] = [];
