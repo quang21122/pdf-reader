@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
           component:
             "Use the OCRProcessor component from @/components/ocr/OCRProcessor",
           function: "Use extractTextFromPDFWithOCR from @/utils/ocrUtils",
-          demo: "Visit /ocr-demo to see OCR functionality in action",
         },
         supportedLanguages: [
           { code: "eng", name: "English" },
@@ -66,7 +65,6 @@ export async function GET() {
     usage: {
       component: "Import OCRProcessor from @/components/ocr/OCRProcessor",
       function: "Import extractTextFromPDFWithOCR from @/utils/ocrUtils",
-      demo: "Visit /ocr-demo for a working example",
     },
     methods: ["GET", "POST"],
   });

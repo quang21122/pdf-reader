@@ -12,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,8 +33,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     // Get initial session
     const getInitialSession = async () => {
       const {
@@ -55,7 +59,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
+      console.log(
+        "Auth state changed:",
+        event,
+        session?.user?.email || "no user"
+      );
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -93,7 +101,18 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "http://localhost:3000"
+      }/reset-password`,
+    });
+    return { error };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
     });
     return { error };
   };
@@ -101,12 +120,18 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     user,
     session,
-    loading,
+    loading: loading || !mounted,
     signIn,
     signUp,
     signOut,
     resetPassword,
+    updatePassword,
   };
+
+  // Don't render children until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
