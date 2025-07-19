@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
 interface AuthGuardProps {
@@ -18,7 +18,6 @@ export default function AuthGuard({
 }: AuthGuardProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !user) {

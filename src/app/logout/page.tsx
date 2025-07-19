@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Container,
   Card,
@@ -23,14 +23,7 @@ export default function LogoutPage() {
   const [logoutSuccess, setLogoutSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto logout if user is logged in
-  useEffect(() => {
-    if (user && !isLoggingOut && !logoutSuccess) {
-      handleLogout();
-    }
-  }, [user, isLoggingOut, logoutSuccess]);
-
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
     setError(null);
 
@@ -52,7 +45,14 @@ export default function LogoutPage() {
     } finally {
       setIsLoggingOut(false);
     }
-  };
+  }, [router, signOut]);
+
+  // Auto logout if user is logged in
+  useEffect(() => {
+    if (user && !isLoggingOut && !logoutSuccess) {
+      handleLogout();
+    }
+  }, [user, isLoggingOut, logoutSuccess, handleLogout]);
 
   const handleManualLogout = () => {
     if (!isLoggingOut) {

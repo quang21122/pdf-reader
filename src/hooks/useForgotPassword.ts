@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useAuth } from '@/components/providers/AuthProvider';
+import { useState } from "react";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 interface UseForgotPasswordOptions {
   onSuccess?: (email: string) => void;
@@ -8,7 +8,7 @@ interface UseForgotPasswordOptions {
 
 interface ForgotPasswordError {
   message: string;
-  type: 'validation' | 'auth' | 'network';
+  type: "validation" | "auth" | "network";
 }
 
 /**
@@ -17,8 +17,8 @@ interface ForgotPasswordError {
  */
 export function useForgotPassword(options: UseForgotPasswordOptions = {}) {
   const { onSuccess, onError } = options;
-  
-  const [email, setEmail] = useState('');
+
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<ForgotPasswordError | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,8 +28,8 @@ export function useForgotPassword(options: UseForgotPasswordOptions = {}) {
   const validateEmail = (email: string): boolean => {
     if (!email.trim()) {
       setError({
-        message: 'Please enter your email address',
-        type: 'validation'
+        message: "Please enter your email address",
+        type: "validation",
       });
       return false;
     }
@@ -37,8 +37,8 @@ export function useForgotPassword(options: UseForgotPasswordOptions = {}) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError({
-        message: 'Please enter a valid email address',
-        type: 'validation'
+        message: "Please enter a valid email address",
+        type: "validation",
       });
       return false;
     }
@@ -46,7 +46,9 @@ export function useForgotPassword(options: UseForgotPasswordOptions = {}) {
     return true;
   };
 
-  const handleForgotPassword = async (emailToReset?: string): Promise<boolean> => {
+  const handleForgotPassword = async (
+    emailToReset?: string
+  ): Promise<boolean> => {
     const targetEmail = emailToReset || email;
     setError(null);
     setSuccess(null);
@@ -61,27 +63,28 @@ export function useForgotPassword(options: UseForgotPasswordOptions = {}) {
       const { error: authError } = await resetPassword(targetEmail);
 
       if (authError) {
-        const errorMessage = authError.message.includes('User not found') 
-          ? 'No account found with this email address'
+        const errorMessage = authError.message.includes("User not found")
+          ? "No account found with this email address"
           : authError.message;
-          
+
         setError({
           message: errorMessage,
-          type: 'auth'
+          type: "auth",
         });
         onError?.(errorMessage);
         return false;
       } else {
-        const successMessage = 'Password reset email has been sent! Please check your inbox and follow the instructions.';
+        const successMessage =
+          "Password reset email has been sent! Please check your inbox and follow the instructions.";
         setSuccess(successMessage);
         onSuccess?.(targetEmail);
         return true;
       }
-    } catch (err) {
-      const errorMessage = 'An unexpected error occurred. Please try again.';
+    } catch {
+      const errorMessage = "An unexpected error occurred. Please try again.";
       setError({
         message: errorMessage,
-        type: 'network'
+        type: "network",
       });
       onError?.(errorMessage);
       return false;
@@ -99,30 +102,31 @@ export function useForgotPassword(options: UseForgotPasswordOptions = {}) {
   };
 
   const resetForm = () => {
-    setEmail('');
+    setEmail("");
     setError(null);
     setSuccess(null);
   };
 
-  const isFormValid = email.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isFormValid =
+    email.trim() !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   return {
     // Form state
     email,
     setEmail,
-    
+
     // Error and success handling
     error,
     success,
     clearError,
     clearSuccess,
-    
+
     // Loading state
     isLoading,
-    
+
     // Form validation
     isFormValid,
-    
+
     // Actions
     handleForgotPassword,
     resetForm,

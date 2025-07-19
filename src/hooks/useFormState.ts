@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 export interface FormState {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface FormStateOptions {
@@ -22,7 +22,7 @@ export function useFormState(options: FormStateOptions = {}) {
     onSubmit,
     onSuccess,
     onError,
-    resetOnSuccess = false
+    resetOnSuccess = false,
   } = options;
 
   const [formData, setFormData] = useState<FormState>(initialState);
@@ -30,17 +30,17 @@ export function useFormState(options: FormStateOptions = {}) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitCount, setSubmitCount] = useState(0);
 
-  const updateField = useCallback((fieldName: string, value: any) => {
-    setFormData(prev => ({
+  const updateField = useCallback((fieldName: string, value: unknown) => {
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: value,
     }));
   }, []);
 
   const updateFields = useCallback((updates: Partial<FormState>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      ...updates
+      ...updates,
     }));
   }, []);
 
@@ -54,54 +54,69 @@ export function useFormState(options: FormStateOptions = {}) {
     setFormData(initialState);
   }, [initialState]);
 
-  const handleSubmit = useCallback(async (event?: React.FormEvent) => {
-    if (event) {
-      event.preventDefault();
-    }
+  const handleSubmit = useCallback(
+    async (event?: React.FormEvent) => {
+      if (event) {
+        event.preventDefault();
+      }
 
-    if (!onSubmit) {
-      console.warn('useFormState: No onSubmit handler provided');
-      return false;
-    }
-
-    setIsLoading(true);
-    setIsSubmitted(true);
-    setSubmitCount(prev => prev + 1);
-
-    try {
-      const result = await onSubmit(formData);
-      
-      if (result) {
-        onSuccess?.(formData);
-        if (resetOnSuccess) {
-          resetForm();
-        }
-        return true;
-      } else {
-        onError?.('Form submission failed');
+      if (!onSubmit) {
+        console.warn("useFormState: No onSubmit handler provided");
         return false;
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      onError?.(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [formData, onSubmit, onSuccess, onError, resetOnSuccess, resetForm]);
 
-  const getFieldValue = useCallback((fieldName: string) => {
-    return formData[fieldName];
-  }, [formData]);
+      setIsLoading(true);
+      setIsSubmitted(true);
+      setSubmitCount((prev) => prev + 1);
 
-  const hasFieldValue = useCallback((fieldName: string) => {
-    const value = formData[fieldName];
-    return value !== undefined && value !== null && value !== '';
-  }, [formData]);
+      try {
+        const result = await onSubmit(formData);
 
-  const isFieldEmpty = useCallback((fieldName: string) => {
-    return !hasFieldValue(fieldName);
-  }, [hasFieldValue]);
+        if (result) {
+          onSuccess?.(formData);
+          if (resetOnSuccess) {
+            resetForm();
+          }
+          return true;
+        } else {
+          onError?.("Form submission failed");
+          return false;
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred";
+        onError?.(errorMessage);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [formData, onSubmit, onSuccess, onError, resetOnSuccess, resetForm]
+  );
+
+  const getFieldValue = useCallback(
+    (fieldName: string) => {
+      return formData[fieldName];
+    },
+    [formData]
+  );
+
+  const hasFieldValue = useCallback(
+    (fieldName: string) => {
+      const value = formData[fieldName];
+      return value !== undefined && value !== null && value !== "";
+    },
+    [formData]
+  );
+
+  const isFieldEmpty = useCallback(
+    (fieldName: string) => {
+      return !hasFieldValue(fieldName);
+    },
+    [hasFieldValue]
+  );
 
   const getFormValues = useCallback(() => {
     return { ...formData };
@@ -115,7 +130,7 @@ export function useFormState(options: FormStateOptions = {}) {
     // Form data
     formData,
     setFormData: setFormData_,
-    
+
     // Field operations
     updateField,
     updateFields,
@@ -123,12 +138,12 @@ export function useFormState(options: FormStateOptions = {}) {
     hasFieldValue,
     isFieldEmpty,
     getFormValues,
-    
+
     // Form operations
     resetForm,
     resetToInitial,
     handleSubmit,
-    
+
     // State
     isLoading,
     isSubmitted,
@@ -142,20 +157,26 @@ export function useFormState(options: FormStateOptions = {}) {
 export function useSimpleFormState<T extends FormState>(initialState: T) {
   const [formData, setFormData] = useState<T>(initialState);
 
-  const updateField = useCallback(<K extends keyof T>(fieldName: K, value: T[K]) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
-  }, []);
+  const updateField = useCallback(
+    <K extends keyof T>(fieldName: K, value: T[K]) => {
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: value,
+      }));
+    },
+    []
+  );
 
   const resetForm = useCallback(() => {
     setFormData(initialState);
   }, [initialState]);
 
-  const getFieldValue = useCallback(<K extends keyof T>(fieldName: K): T[K] => {
-    return formData[fieldName];
-  }, [formData]);
+  const getFieldValue = useCallback(
+    <K extends keyof T>(fieldName: K): T[K] => {
+      return formData[fieldName];
+    },
+    [formData]
+  );
 
   return {
     formData,

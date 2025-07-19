@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/components/providers/AuthProvider';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 interface UseLoginOptions {
   onSuccess?: () => void;
@@ -9,7 +9,7 @@ interface UseLoginOptions {
 
 interface LoginError {
   message: string;
-  type: 'validation' | 'auth' | 'network';
+  type: "validation" | "auth" | "network";
 }
 
 /**
@@ -17,10 +17,10 @@ interface LoginError {
  * Manages form state, validation, authentication, and redirects
  */
 export function useLogin(options: UseLoginOptions = {}) {
-  const { onSuccess, redirectTo = '/dashboard', autoRedirect = true } = options;
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { onSuccess, redirectTo = "/dashboard", autoRedirect = true } = options;
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<LoginError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -44,16 +44,16 @@ export function useLogin(options: UseLoginOptions = {}) {
   const validateForm = (): boolean => {
     if (!email.trim()) {
       setError({
-        message: 'Email is required',
-        type: 'validation'
+        message: "Email is required",
+        type: "validation",
       });
       return false;
     }
 
     if (!password.trim()) {
       setError({
-        message: 'Password is required',
-        type: 'validation'
+        message: "Password is required",
+        type: "validation",
       });
       return false;
     }
@@ -61,8 +61,8 @@ export function useLogin(options: UseLoginOptions = {}) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError({
-        message: 'Please enter a valid email address',
-        type: 'validation'
+        message: "Please enter a valid email address",
+        type: "validation",
       });
       return false;
     }
@@ -71,21 +71,21 @@ export function useLogin(options: UseLoginOptions = {}) {
   };
 
   const getErrorMessage = (errorMessage: string): string => {
-    if (errorMessage.includes('Invalid login credentials')) {
-      return 'Invalid email or password. Please check your login credentials.';
-    } else if (errorMessage.includes('Email not confirmed')) {
-      return 'Account not verified. Please check your email and click the verification link.';
-    } else if (errorMessage.includes('Too many requests')) {
-      return 'Too many login attempts. Please try again in a few minutes.';
-    } else if (errorMessage.includes('User not found')) {
-      return 'No account found with this email. Please sign up for a new account.';
+    if (errorMessage.includes("Invalid login credentials")) {
+      return "Invalid email or password. Please check your login credentials.";
+    } else if (errorMessage.includes("Email not confirmed")) {
+      return "Account not verified. Please check your email and click the verification link.";
+    } else if (errorMessage.includes("Too many requests")) {
+      return "Too many login attempts. Please try again in a few minutes.";
+    } else if (errorMessage.includes("User not found")) {
+      return "No account found with this email. Please sign up for a new account.";
     }
     return errorMessage;
   };
 
   const handleLogin = async () => {
     setError(null);
-    
+
     if (!validateForm()) {
       return false;
     }
@@ -98,16 +98,16 @@ export function useLogin(options: UseLoginOptions = {}) {
       if (authError) {
         setError({
           message: getErrorMessage(authError.message),
-          type: 'auth'
+          type: "auth",
         });
         return false;
       }
 
       return true;
-    } catch (err) {
+    } catch {
       setError({
-        message: 'An unexpected error occurred. Please try again.',
-        type: 'network'
+        message: "An unexpected error occurred. Please try again.",
+        type: "network",
       });
       return false;
     } finally {
@@ -120,12 +120,12 @@ export function useLogin(options: UseLoginOptions = {}) {
   };
 
   const resetForm = () => {
-    setEmail('');
-    setPassword('');
+    setEmail("");
+    setPassword("");
     setError(null);
   };
 
-  const isFormValid = email.trim() !== '' && password.trim() !== '';
+  const isFormValid = email.trim() !== "" && password.trim() !== "";
 
   return {
     // Form state
@@ -133,21 +133,21 @@ export function useLogin(options: UseLoginOptions = {}) {
     password,
     setEmail,
     setPassword,
-    
+
     // Error handling
     error,
     clearError,
-    
+
     // Loading state
     isLoading,
-    
+
     // Form validation
     isFormValid,
-    
+
     // Actions
     handleLogin,
     resetForm,
-    
+
     // User state
     user,
   };

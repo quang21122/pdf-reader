@@ -21,7 +21,7 @@ export interface OCRResult {
 
 export interface OCROptions {
   language?: string;
-  onProgress?: (progress: any) => void;
+  onProgress?: (progress: unknown) => void;
   onResults?: (results: OCRResult[]) => void;
 }
 

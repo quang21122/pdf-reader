@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useAuth } from '@/components/providers/AuthProvider';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { useRouter } from "next/navigation";
 
 interface UseRegisterOptions {
   onSuccess?: () => void;
@@ -10,7 +10,7 @@ interface UseRegisterOptions {
 
 interface RegisterError {
   message: string;
-  type: 'validation' | 'auth' | 'network';
+  type: "validation" | "auth" | "network";
 }
 
 /**
@@ -18,11 +18,11 @@ interface RegisterError {
  * Manages form state, validation, registration, and redirects
  */
 export function useRegister(options: UseRegisterOptions = {}) {
-  const { onSuccess, redirectTo = '/login', autoRedirect = true } = options;
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { onSuccess, redirectTo = "/login", autoRedirect = true } = options;
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState<RegisterError | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,8 +34,8 @@ export function useRegister(options: UseRegisterOptions = {}) {
   const validateForm = (): boolean => {
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
       setError({
-        message: 'Please fill in all required fields',
-        type: 'validation'
+        message: "Please fill in all required fields",
+        type: "validation",
       });
       return false;
     }
@@ -43,32 +43,32 @@ export function useRegister(options: UseRegisterOptions = {}) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError({
-        message: 'Please enter a valid email address',
-        type: 'validation'
+        message: "Please enter a valid email address",
+        type: "validation",
       });
       return false;
     }
 
     if (password.length < 6) {
       setError({
-        message: 'Password must be at least 6 characters long',
-        type: 'validation'
+        message: "Password must be at least 6 characters long",
+        type: "validation",
       });
       return false;
     }
 
     if (password !== confirmPassword) {
       setError({
-        message: 'Password confirmation does not match',
-        type: 'validation'
+        message: "Password confirmation does not match",
+        type: "validation",
       });
       return false;
     }
 
     if (!acceptTerms) {
       setError({
-        message: 'Please accept the terms of service and privacy policy',
-        type: 'validation'
+        message: "Please accept the terms of service and privacy policy",
+        type: "validation",
       });
       return false;
     }
@@ -92,14 +92,14 @@ export function useRegister(options: UseRegisterOptions = {}) {
       if (authError) {
         setError({
           message: authError.message,
-          type: 'auth'
+          type: "auth",
         });
         return false;
       } else {
         setSuccess(
-          'Registration successful! Please check your email to verify your account.'
+          "Registration successful! Please check your email to verify your account."
         );
-        
+
         if (autoRedirect) {
           setTimeout(() => {
             if (onSuccess) {
@@ -109,13 +109,13 @@ export function useRegister(options: UseRegisterOptions = {}) {
             }
           }, 2000);
         }
-        
+
         return true;
       }
-    } catch (err) {
+    } catch {
       setError({
-        message: 'An unexpected error occurred. Please try again.',
-        type: 'network'
+        message: "An unexpected error occurred. Please try again.",
+        type: "network",
       });
       return false;
     } finally {
@@ -132,18 +132,18 @@ export function useRegister(options: UseRegisterOptions = {}) {
   };
 
   const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
     setAcceptTerms(false);
     setError(null);
     setSuccess(null);
   };
 
-  const isFormValid = 
-    email.trim() !== '' && 
-    password.trim() !== '' && 
-    confirmPassword.trim() !== '' && 
+  const isFormValid =
+    email.trim() !== "" &&
+    password.trim() !== "" &&
+    confirmPassword.trim() !== "" &&
     acceptTerms;
 
   const passwordsMatch = password === confirmPassword;
@@ -159,21 +159,21 @@ export function useRegister(options: UseRegisterOptions = {}) {
     setPassword,
     setConfirmPassword,
     setAcceptTerms,
-    
+
     // Error and success handling
     error,
     success,
     clearError,
     clearSuccess,
-    
+
     // Loading state
     isLoading,
-    
+
     // Form validation
     isFormValid,
     passwordsMatch,
     isPasswordValid,
-    
+
     // Actions
     handleRegister,
     resetForm,

@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 import NextLink from "next/link";
 import Image from "next/image";
-import { useUserMenu, useNavigation } from "@/hooks";
+import { useUserMenu } from "@/hooks";
 
 export default function Navigation() {
   const {
@@ -43,7 +43,8 @@ export default function Navigation() {
     getUserInitials,
   } = useUserMenu();
 
-  const { goToLogin, goToRegister, goToUpload } = useNavigation();
+  // Navigation hooks available if needed
+  // const { goToLogin, goToRegister, goToUpload } = useNavigation();
 
   return (
     <AppBar
