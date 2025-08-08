@@ -69,9 +69,9 @@ export const themeUtils = {
   watchSystemTheme: (callback: (isDark: boolean) => void) => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = (e: MediaQueryListEvent) => callback(e.matches);
-    
+
     mediaQuery.addEventListener("change", handler);
-    
+
     // Return cleanup function
     return () => mediaQuery.removeEventListener("change", handler);
   },

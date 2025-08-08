@@ -44,6 +44,40 @@ export const DELETE_PDF_FILE = gql`
   }
 `;
 
+// File Upload with Storage Operations
+export const UPLOAD_PDF_FILE = gql`
+  mutation UploadPDFFile($input: FileUploadInput!) {
+    uploadPDFFile(input: $input) {
+      id
+      user_id
+      filename
+      file_path
+      file_size
+      upload_date
+      public_url
+      description
+      created_at
+      updated_at
+    }
+  }
+`;
+
+export const DELETE_PDF_FILE_WITH_STORAGE = gql`
+  mutation DeletePDFFileWithStorage($id: UUID!, $user_id: UUID!) {
+    deletePDFFileWithStorage(id: $id, user_id: $user_id) {
+      id
+      filename
+      file_path
+    }
+  }
+`;
+
+export const GET_PDF_FILE_URL = gql`
+  mutation GetPDFFileUrl($file_path: String!) {
+    getPDFFileUrl(file_path: $file_path)
+  }
+`;
+
 // Notes Mutations
 export const INSERT_NOTE = gql`
   mutation InsertNote($object: notes_insert_input!) {

@@ -51,8 +51,12 @@ function UploadContent() {
     failUpload,
     addFile,
   } = usePDFStore();
-  const { showSuccessNotification, showErrorNotification, setLoading } =
-    useUIStore();
+  const {
+    showSuccessNotification,
+    showErrorNotification,
+    setLoading,
+    addNotification,
+  } = useUIStore();
   const { auto_ocr, max_file_size } = useSettingsStore();
 
   // Local state for this component only
@@ -157,15 +161,21 @@ function UploadContent() {
 
       // Show success notification with auto-OCR info
       if (auto_ocr) {
-        showSuccessNotification(
-          "Upload Complete",
-          "File uploaded successfully! OCR processing will start automatically."
-        );
+        addNotification({
+          type: "success",
+          title: "Upload Complete",
+          message:
+            "File uploaded successfully! OCR processing will start automatically.",
+          duration: 10000, // 10 seconds to ensure it shows on dashboard
+        });
       } else {
-        showSuccessNotification(
-          "Upload Complete",
-          "File uploaded successfully! You can now process it with OCR."
-        );
+        addNotification({
+          type: "success",
+          title: "Upload Complete",
+          message:
+            "File uploaded successfully! You can now process it with OCR.",
+          duration: 10000, // 10 seconds to ensure it shows on dashboard
+        });
       }
 
       // Auto-redirect after successful upload
@@ -249,6 +259,10 @@ function UploadContent() {
                     label={uploadState.uploadedFile.filename}
                     variant="outlined"
                     className="mb-2"
+                    sx={{
+                      color: "#000000",
+                      borderColor: "#e5e7eb",
+                    }}
                   />
                 </Box>
               )}

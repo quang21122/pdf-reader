@@ -2,7 +2,7 @@ import { gql } from "@apollo/client";
 
 // PDF Files Queries
 export const GET_USER_PDF_FILES = gql`
-  query GetUserPDFFiles($userId: UUID!) {
+  query GetPDFFiles($userId: UUID!) {
     getPDFFiles(user_id: $userId) {
       id
       user_id

@@ -81,7 +81,8 @@ export default function ResetPasswordForm() {
               Invalid Reset Link
             </Typography>
             <Typography variant="body1" sx={{ mb: 4, color: "#64748b" }}>
-              This password reset link is invalid or has expired. Please request a new password reset.
+              This password reset link is invalid or has expired. Please request
+              a new password reset.
             </Typography>
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
               <Button
@@ -306,7 +307,9 @@ export default function ResetPasswordForm() {
                     marginLeft: 1,
                   }}
                 >
-                  {passwordsMatch ? "Passwords match" : "Passwords do not match"}
+                  {passwordsMatch
+                    ? "Passwords match"
+                    : "Passwords do not match"}
                 </Typography>
               )}
             </Box>

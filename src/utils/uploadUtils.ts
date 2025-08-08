@@ -1,12 +1,11 @@
-import { supabase } from "./supabaseClient";
-import { v4 as uuidv4 } from "uuid";
 import { apolloClient } from "@/graphql/client";
 import {
-  INSERT_PDF_FILE,
   UPDATE_PDF_FILE,
-  DELETE_PDF_FILE,
+  DELETE_PDF_FILE_WITH_STORAGE,
+  GET_PDF_FILE_URL,
 } from "@/graphql/mutations";
 import { GET_USER_PDF_FILES, GET_PDF_FILE_BY_ID } from "@/graphql/queries";
+import { supabase } from "@/utils/supabaseClient";
 import type { FetchPolicy } from "@apollo/client";
 
 export interface UploadResult {
@@ -23,7 +22,7 @@ export interface UploadProgress {
 }
 
 /**
- * Upload PDF file to Supabase Storage and save metadata to database
+ * Upload PDF file using REST API (includes storage and database operations)
  */
 export async function uploadPDFToSupabase(
   file: File,
@@ -44,82 +43,57 @@ export async function uploadPDFToSupabase(
 
     onProgress?.(10);
 
-    // Generate unique file ID and path
-    const fileId = uuidv4();
-    const fileExtension = "pdf";
-    const fileName = `${fileId}.${fileExtension}`;
-    const filePath = `${userId}/${fileName}`;
+    console.log("Client-side file details:", {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified,
+    });
 
-    onProgress?.(20);
+    // Create form data
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("user_id", userId);
+    formData.append("filename", file.name);
 
-    // Upload file to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from("pdf")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    onProgress?.(30);
 
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      throw new Error(`Upload failed: ${uploadError.message}`);
-    }
+    // Get auth token
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
 
-    onProgress?.(60);
-
-    // Get the public URL for the uploaded file
-    const { data: urlData } = supabase.storage
-      .from("pdf")
-      .getPublicUrl(filePath);
+    // Upload file using REST API
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
 
     onProgress?.(80);
 
-    // Save file metadata to database using GraphQL
-    const fileMetadata = {
-      id: fileId,
-      user_id: userId,
-      filename: file.name,
-      file_path: filePath,
-      file_size: file.size,
-      upload_date: new Date().toISOString(),
-      public_url: urlData.publicUrl,
-    };
-
-    let dbData;
-    try {
-      const { data: gqlData } = await apolloClient.mutate({
-        mutation: INSERT_PDF_FILE,
-        variables: {
-          object: fileMetadata,
-        },
-      });
-
-      if (!gqlData?.insertPDFFile) {
-        throw new Error("Failed to insert file metadata");
-      }
-
-      dbData = gqlData.insertPDFFile;
-    } catch (gqlError) {
-      console.error("GraphQL insert error:", gqlError);
-
-      // If database insert fails, clean up the uploaded file
-      await supabase.storage.from("pdf").remove([filePath]);
-
-      throw new Error(
-        `Failed to save file metadata: ${
-          gqlError instanceof Error ? gqlError.message : "Unknown error"
-        }`
-      );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Upload failed");
     }
+
+    const result = await response.json();
 
     onProgress?.(100);
 
+    if (!result.success) {
+      throw new Error(result.error || "Upload failed");
+    }
+
     return {
-      id: dbData.id,
-      filename: dbData.filename,
-      file_path: dbData.file_path,
-      file_size: dbData.file_size,
-      upload_date: dbData.upload_date,
+      id: result.data.id,
+      filename: result.data.filename,
+      file_path: result.data.file_path,
+      file_size: result.data.file_size,
+      upload_date: result.data.upload_date,
     };
   } catch (error) {
     console.error("Upload error:", error);
@@ -128,37 +102,21 @@ export async function uploadPDFToSupabase(
 }
 
 /**
- * Get user's uploaded PDF files using GraphQL
+ * Get user's uploaded PDF files using GraphQL only
  */
 export async function getUserPDFFiles(userId: string) {
   try {
-    // Try GraphQL first
-    try {
-      const { data: gqlData } = await apolloClient.query({
-        query: GET_USER_PDF_FILES,
-        variables: {
-          userId: userId,
-        },
-        fetchPolicy: "cache-and-network" as FetchPolicy, // Always fetch fresh data
-      });
+    const { data: gqlData } = await apolloClient.query({
+      query: GET_USER_PDF_FILES,
+      variables: {
+        userId: userId,
+      },
+      fetchPolicy: "cache-first", // Use cache if available, otherwise fetch
+    });
 
-      return gqlData?.getPDFFiles || [];
-    } catch {
-      // Fallback to REST API
-      const { data, error } = await supabase
-        .from("pdf_files")
-        .select("*")
-        .eq("user_id", userId)
-        .order("upload_date", { ascending: false });
-
-      if (error) {
-        throw new Error(`Failed to fetch files: ${error.message}`);
-      }
-
-      return data || [];
-    }
+    return gqlData?.getPDFFiles || [];
   } catch (error) {
-    console.error("Failed to fetch user files:", error);
+    console.error("GraphQL fetch user files error:", error);
     throw new Error(
       `Failed to fetch files: ${
         error instanceof Error ? error.message : "Unknown error"
@@ -172,37 +130,18 @@ export async function getUserPDFFiles(userId: string) {
  */
 export async function deletePDFFile(fileId: string, userId: string) {
   try {
-    // First get the file metadata using GraphQL
-    const { data: gqlData } = await apolloClient.query({
-      query: GET_PDF_FILE_BY_ID,
+    // Delete from both storage and database using GraphQL mutation
+    const { data: gqlData } = await apolloClient.mutate({
+      mutation: DELETE_PDF_FILE_WITH_STORAGE,
       variables: {
         id: fileId,
-        userId: userId,
+        user_id: userId,
       },
     });
 
-    const fileData = gqlData?.getPDFFile;
-    if (!fileData) {
-      throw new Error("File not found or access denied");
+    if (!gqlData?.deletePDFFileWithStorage) {
+      throw new Error("Failed to delete file");
     }
-
-    // Delete from storage
-    const { error: storageError } = await supabase.storage
-      .from("pdf")
-      .remove([fileData.file_path]);
-
-    if (storageError) {
-      console.error("Storage delete error:", storageError);
-      // Continue with database deletion even if storage deletion fails
-    }
-
-    // Delete from database using GraphQL
-    await apolloClient.mutate({
-      mutation: DELETE_PDF_FILE,
-      variables: {
-        id: fileId,
-      },
-    });
 
     return true;
   } catch (error) {
@@ -216,15 +155,24 @@ export async function deletePDFFile(fileId: string, userId: string) {
 }
 
 /**
- * Get PDF file download URL
+ * Get PDF file download URL using GraphQL
  */
 export async function getPDFDownloadUrl(filePath: string): Promise<string> {
   try {
-    const { data } = supabase.storage.from("pdf").getPublicUrl(filePath);
+    const { data: gqlData } = await apolloClient.mutate({
+      mutation: GET_PDF_FILE_URL,
+      variables: {
+        file_path: filePath,
+      },
+    });
 
-    return data.publicUrl;
+    if (!gqlData?.getPDFFileUrl) {
+      throw new Error("Failed to get download URL");
+    }
+
+    return gqlData.getPDFFileUrl;
   } catch (error) {
-    console.error("Get download URL error:", error);
+    console.error("GraphQL get download URL error:", error);
     throw new Error("Failed to get download URL");
   }
 }
@@ -257,7 +205,6 @@ export async function checkFileAccess(
  */
 export async function updatePDFFileMetadata(
   fileId: string,
-  userId: string,
   updates: Partial<{
     filename: string;
     description: string;

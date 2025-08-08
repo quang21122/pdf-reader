@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useNotifications } from "./useNotifications";
 import {
@@ -23,11 +23,15 @@ export interface PDFFile {
 export const useFileManagement = () => {
   const { user } = useAuth();
   const notifications = useNotifications();
-  
+
   const [files, setFiles] = useState<PDFFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Use ref to store notifications to avoid dependency issues
+  const notificationsRef = useRef(notifications);
+  notificationsRef.current = notifications;
 
   const loadFiles = useCallback(async () => {
     if (!user) return;
@@ -39,13 +43,14 @@ export const useFileManagement = () => {
       setFiles(userFiles);
     } catch (err) {
       console.error("Error loading files:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to load files";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load files";
       setError(errorMessage);
-      notifications.error("Load Failed", errorMessage);
+      notificationsRef.current.error("Load Failed", errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [user, notifications]);
+  }, [user]); // Remove notifications from dependencies
 
   useEffect(() => {
     if (user) {
@@ -62,14 +67,17 @@ export const useFileManagement = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      notifications.success("Download Started", `Downloading ${file.filename}`);
+
+      notificationsRef.current.success(
+        "Download Started",
+        `Downloading ${file.filename}`
+      );
       return true;
     } catch (err) {
       console.error("Download error:", err);
       const errorMessage = "Failed to download file";
       setError(errorMessage);
-      notifications.error("Download Failed", errorMessage);
+      notificationsRef.current.error("Download Failed", errorMessage);
       return false;
     }
   };
@@ -80,14 +88,18 @@ export const useFileManagement = () => {
     try {
       setDeleting(true);
       await deletePDFFile(file.id, user.id);
-      setFiles(prevFiles => prevFiles.filter((f) => f.id !== file.id));
-      notifications.success("File Deleted", `${file.filename} has been removed`);
+      setFiles((prevFiles) => prevFiles.filter((f) => f.id !== file.id));
+      notificationsRef.current.success(
+        "File Deleted",
+        `${file.filename} has been removed`
+      );
       return true;
     } catch (err) {
       console.error("Delete error:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete file";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete file";
       setError(errorMessage);
-      notifications.error("Delete Failed", errorMessage);
+      notificationsRef.current.error("Delete Failed", errorMessage);
       return false;
     } finally {
       setDeleting(false);

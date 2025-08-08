@@ -2,8 +2,7 @@ import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { supabase } from "@/utils/supabaseClient";
 
-// Create HTTP link to your GraphQL endpoint
-// You can use Hasura, Postgraphile, or custom GraphQL server
+// Create HTTP link for GraphQL operations
 const httpLink = createHttpLink({
   uri:
     process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||

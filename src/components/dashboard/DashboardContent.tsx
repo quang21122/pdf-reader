@@ -21,12 +21,7 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
 import Navigation from "@/components/layout/Navigation";
-import {
-  usePDFStore,
-  useOCRStore,
-  useUIStore,
-  useSettingsStore,
-} from "@/stores";
+import { usePDFStore, useOCRStore, useSettingsStore } from "@/stores";
 
 export default function DashboardContent() {
   const { user } = useAuth();
@@ -35,7 +30,6 @@ export default function DashboardContent() {
   // Zustand stores
   const { files, isUploading } = usePDFStore();
   const { isProcessing } = useOCRStore();
-  const { notifications } = useUIStore();
   const { auto_ocr } = useSettingsStore();
 
   const recentFiles = files.slice(0, 5); // Show last 5 files
@@ -68,13 +62,6 @@ export default function DashboardContent() {
             {auto_ocr && (
               <Chip label="Auto-OCR enabled" color="success" size="small" />
             )}
-            {notifications.length > 0 && (
-              <Chip
-                label={`${notifications.length} notifications`}
-                color="info"
-                size="small"
-              />
-            )}
           </Box>
         </Box>
 
@@ -105,7 +92,10 @@ export default function DashboardContent() {
               >
                 <Box>
                   <CloudUpload className="text-5xl mb-4 text-blue-500" />
-                  <Typography variant="h6" className="mb-2 font-semibold">
+                  <Typography
+                    variant="h6"
+                    className="mb-2 font-semibold text-black"
+                  >
                     Upload PDF
                   </Typography>
                   <Typography variant="body2" className="text-gray-600 mb-6">
@@ -154,7 +144,10 @@ export default function DashboardContent() {
               >
                 <Box>
                   <Description className="text-5xl mb-4 text-green-500" />
-                  <Typography variant="h6" className="mb-2 font-semibold">
+                  <Typography
+                    variant="h6"
+                    className="mb-2 font-semibold text-black"
+                  >
                     My PDFs
                   </Typography>
                   <Typography variant="body2" className="text-gray-600 mb-6">
@@ -198,7 +191,10 @@ export default function DashboardContent() {
               >
                 <Box>
                   <TextFields className="text-5xl mb-4 text-purple-500" />
-                  <Typography variant="h6" className="mb-2 font-semibold">
+                  <Typography
+                    variant="h6"
+                    className="mb-2 font-semibold text-black"
+                  >
                     OCR Scanner
                   </Typography>
                   <Typography variant="body2" className="text-gray-600 mb-6">
@@ -242,7 +238,10 @@ export default function DashboardContent() {
               >
                 <Box>
                   <History className="text-5xl mb-4 text-orange-500" />
-                  <Typography variant="h6" className="mb-2 font-semibold">
+                  <Typography
+                    variant="h6"
+                    className="mb-2 font-semibold text-black"
+                  >
                     Recent Activity
                   </Typography>
                   <Typography variant="body2" className="text-gray-600 mb-6">
@@ -294,7 +293,10 @@ export default function DashboardContent() {
                       >
                         <Description className="text-gray-400" />
                         <Box>
-                          <Typography variant="body1" className="font-medium">
+                          <Typography
+                            variant="body1"
+                            className="font-medium text-black"
+                          >
                             {file.filename}
                           </Typography>
                           <Typography variant="body2" className="text-gray-500">

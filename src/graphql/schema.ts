@@ -58,6 +58,27 @@ export const typeDefs = gql`
     description: String
   }
 
+  input FileUploadInput {
+    file: Upload!
+    user_id: UUID!
+    filename: String!
+  }
+
+  type FileUploadResult {
+    id: UUID!
+    user_id: UUID!
+    filename: String!
+    file_path: String!
+    file_size: Int!
+    upload_date: DateTime!
+    public_url: String!
+    description: String
+    created_at: DateTime!
+    updated_at: DateTime!
+  }
+
+  scalar Upload
+
   input OCRResultInput {
     file_id: UUID!
     user_id: UUID!
@@ -80,11 +101,11 @@ export const typeDefs = gql`
     # PDF Files
     getPDFFiles(user_id: UUID!): [PDFFile!]!
     getPDFFile(id: UUID!, user_id: UUID!): PDFFile
-    
+
     # OCR Results
     getOCRResults(file_id: UUID!, user_id: UUID!): [OCRResult!]!
     getOCRResult(id: UUID!, user_id: UUID!): OCRResult
-    
+
     # Notes
     getNotes(file_id: UUID!, user_id: UUID!): [Note!]!
     getNote(id: UUID!, user_id: UUID!): Note
@@ -95,14 +116,19 @@ export const typeDefs = gql`
     insertPDFFile(object: PDFFileInput!): PDFFile!
     updatePDFFile(id: UUID!, changes: PDFFileUpdateInput!): PDFFile!
     deletePDFFile(id: UUID!): PDFFile!
-    
+
+    # File Upload with Storage
+    uploadPDFFile(input: FileUploadInput!): FileUploadResult!
+    deletePDFFileWithStorage(id: UUID!, user_id: UUID!): PDFFile!
+    getPDFFileUrl(file_path: String!): String!
+
     # OCR Results
     insertOCRResult(object: OCRResultInput!): OCRResult!
     insertOCRResults(objects: [OCRResultInput!]!): [OCRResult!]!
     updateOCRResult(id: UUID!, changes: OCRResultInput!): OCRResult!
     deleteOCRResult(id: UUID!): OCRResult!
     deleteOCRResults(file_id: UUID!): [OCRResult!]!
-    
+
     # Notes
     insertNote(object: NoteInput!): Note!
     updateNote(id: UUID!, changes: NoteInput!): Note!
