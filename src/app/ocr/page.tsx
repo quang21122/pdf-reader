@@ -8,30 +8,50 @@ import {
   Card,
   CardContent,
   Button,
-  Alert,
   Divider,
 } from "@mui/material";
 import { CloudUpload, TextFields } from "@mui/icons-material";
 import Navigation from "@/components/layout/Navigation";
 import AuthGuard from "@/components/auth/AuthGuard";
 import OCRProcessor from "@/components/ocr/OCRProcessor";
+import { useOCRStore, useUIStore, useSettingsStore } from "@/stores";
 
 function OCRContent() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Zustand stores
+  const { setCurrentResults } = useOCRStore();
+  const { showSuccessNotification, showErrorNotification } = useUIStore();
+  const { max_file_size } = useSettingsStore();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "application/pdf") {
+      // Check file size
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > max_file_size) {
+        showErrorNotification(
+          "File too large",
+          `File size (${fileSizeMB.toFixed(
+            1
+          )}MB) exceeds limit of ${max_file_size}MB`
+        );
+        return;
+      }
+
       setSelectedFile(file);
-      setUploadError(null);
 
       // Create object URL for the PDF
       const url = URL.createObjectURL(file);
       setPdfUrl(url);
+
+      showSuccessNotification(
+        "File Selected",
+        "PDF file ready for OCR processing"
+      );
     } else {
-      setUploadError("Please select a valid PDF file");
+      showErrorNotification("Invalid file", "Please select a valid PDF file");
       setSelectedFile(null);
       setPdfUrl(null);
     }
@@ -45,13 +65,28 @@ function OCRContent() {
     }>
   ) => {
     console.log("OCR Results:", results);
-    // You can handle the results here, e.g., save to database
+
+    // Convert to store format and save
+    const ocrResults = results.map((result, index) => ({
+      id: `ocr-${Date.now()}-${index}`,
+      file_id: `temp-${Date.now()}`,
+      page_number: result.pageNumber,
+      text: result.text,
+      confidence: result.confidence,
+      processing_time: 0, // Will be calculated by the store
+      created_at: new Date().toISOString(),
+    }));
+
+    setCurrentResults(ocrResults);
+    showSuccessNotification(
+      "OCR Complete",
+      `Successfully extracted text from ${results.length} pages`
+    );
   };
 
   const resetFile = () => {
     setSelectedFile(null);
     setPdfUrl(null);
-    setUploadError(null);
     if (pdfUrl) {
       URL.revokeObjectURL(pdfUrl);
     }
@@ -81,11 +116,7 @@ function OCRContent() {
                 Select a PDF file to extract text using OCR technology
               </Typography>
 
-              {uploadError && (
-                <Alert severity="error" className="mb-4 max-w-md mx-auto">
-                  {uploadError}
-                </Alert>
-              )}
+              {/* Error handling is now done through Zustand notifications */}
 
               <input
                 accept="application/pdf"

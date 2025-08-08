@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from "@/utils/supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 import { GraphQLScalarType, Kind } from "graphql";

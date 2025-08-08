@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import Navigation from "@/components/layout/Navigation";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { uploadPDFToSupabase } from "@/utils/uploadUtils";
+import { usePDFStore, useUIStore, useSettingsStore } from "@/stores";
 
 interface UploadState {
   isUploading: boolean;
@@ -41,6 +42,20 @@ function UploadContent() {
   const { user } = useAuth();
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Zustand stores
+  const {
+    startUpload,
+    updateUploadProgress,
+    completeUpload,
+    failUpload,
+    addFile,
+  } = usePDFStore();
+  const { showSuccessNotification, showErrorNotification, setLoading } =
+    useUIStore();
+  const { auto_ocr, max_file_size } = useSettingsStore();
+
+  // Local state for this component only
   const [uploadState, setUploadState] = useState<UploadState>({
     isUploading: false,
     progress: 0,
@@ -52,6 +67,18 @@ function UploadContent() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "application/pdf") {
+      // Check file size against settings
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > max_file_size) {
+        showErrorNotification(
+          "File too large",
+          `File size (${fileSizeMB.toFixed(
+            1
+          )}MB) exceeds limit of ${max_file_size}MB`
+        );
+        return;
+      }
+
       setSelectedFile(file);
       setUploadState({
         isUploading: false,
@@ -61,42 +88,64 @@ function UploadContent() {
         uploadedFile: null,
       });
     } else {
-      setUploadState((prev) => ({
-        ...prev,
-        error: "Please select a valid PDF file",
-      }));
+      showErrorNotification("Invalid file", "Please select a valid PDF file");
       setSelectedFile(null);
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile || !user) {
-      setUploadState((prev) => ({
-        ...prev,
-        error: "Please select a file and ensure you are logged in",
-      }));
+      showErrorNotification(
+        "Upload Error",
+        "Please select a file and ensure you are logged in"
+      );
       return;
     }
 
-    setUploadState({
-      isUploading: true,
-      progress: 0,
-      error: null,
-      success: false,
-      uploadedFile: null,
-    });
-
     try {
+      // Use Zustand store utility for upload with auto-OCR
+      const fileId = `upload-${Date.now()}`;
+
+      // Start upload in store
+      startUpload(fileId, selectedFile.name);
+      setLoading("file-upload", true);
+
+      setUploadState({
+        isUploading: true,
+        progress: 0,
+        error: null,
+        success: false,
+        uploadedFile: null,
+      });
+
       const result = await uploadPDFToSupabase(
         selectedFile,
         user.id,
         (progress) => {
+          updateUploadProgress(fileId, progress);
           setUploadState((prev) => ({
             ...prev,
             progress,
           }));
         }
       );
+
+      // Create PDF file object for store
+      const pdfFile = {
+        id: fileId,
+        filename: selectedFile.name,
+        file_path: result.file_path,
+        file_size: selectedFile.size,
+        upload_date: new Date().toISOString(),
+        user_id: user.id,
+        status: "ready" as const,
+        page_count: 1, // Will be updated when PDF is processed
+      };
+
+      // Add to store and complete upload
+      addFile(pdfFile);
+      completeUpload(fileId, pdfFile);
+      setLoading("file-upload", false);
 
       setUploadState({
         isUploading: false,
@@ -105,15 +154,45 @@ function UploadContent() {
         success: true,
         uploadedFile: result,
       });
+
+      // Show success notification with auto-OCR info
+      if (auto_ocr) {
+        showSuccessNotification(
+          "Upload Complete",
+          "File uploaded successfully! OCR processing will start automatically."
+        );
+      } else {
+        showSuccessNotification(
+          "Upload Complete",
+          "File uploaded successfully! You can now process it with OCR."
+        );
+      }
+
+      // Auto-redirect after successful upload
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
     } catch (error) {
       console.error("Upload failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
+
+      // Update store and local state
+      if (selectedFile) {
+        const fileId = `upload-${Date.now()}`;
+        failUpload(fileId, errorMessage);
+      }
+      setLoading("file-upload", false);
+
       setUploadState({
         isUploading: false,
         progress: 0,
-        error: error instanceof Error ? error.message : "Upload failed",
+        error: errorMessage,
         success: false,
         uploadedFile: null,
       });
+
+      showErrorNotification("Upload Failed", errorMessage);
     }
   };
 

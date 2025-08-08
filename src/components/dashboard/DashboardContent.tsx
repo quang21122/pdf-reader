@@ -9,6 +9,8 @@ import {
   CardContent,
   Grid,
   Button,
+  Chip,
+  LinearProgress,
 } from "@mui/material";
 import {
   CloudUpload,
@@ -19,10 +21,24 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
 import Navigation from "@/components/layout/Navigation";
+import {
+  usePDFStore,
+  useOCRStore,
+  useUIStore,
+  useSettingsStore,
+} from "@/stores";
 
 export default function DashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
+
+  // Zustand stores
+  const { files, isUploading } = usePDFStore();
+  const { isProcessing } = useOCRStore();
+  const { notifications } = useUIStore();
+  const { auto_ocr } = useSettingsStore();
+
+  const recentFiles = files.slice(0, 5); // Show last 5 files
 
   return (
     <Box sx={{ backgroundColor: "white", minHeight: "100vh" }}>
@@ -35,6 +51,31 @@ export default function DashboardContent() {
           <Typography variant="body1" className="text-gray-600">
             Welcome back, {user?.email}!
           </Typography>
+
+          {/* Status indicators */}
+          <Box className="flex gap-2 mt-4">
+            {isUploading && (
+              <Chip
+                label="Uploading files..."
+                color="primary"
+                size="small"
+                icon={<LinearProgress />}
+              />
+            )}
+            {isProcessing && (
+              <Chip label="Processing OCR..." color="secondary" size="small" />
+            )}
+            {auto_ocr && (
+              <Chip label="Auto-OCR enabled" color="success" size="small" />
+            )}
+            {notifications.length > 0 && (
+              <Chip
+                label={`${notifications.length} notifications`}
+                color="info"
+                size="small"
+              />
+            )}
+          </Box>
         </Box>
 
         <Grid container spacing={3}>
@@ -224,7 +265,7 @@ export default function DashboardContent() {
         {/* Recent Files Section */}
         <Box className="mt-10">
           <Typography variant="h5" className="font-bold text-gray-800 mb-4">
-            Recent Files
+            Recent Files ({files.length})
           </Typography>
           <Card
             sx={{
@@ -233,48 +274,119 @@ export default function DashboardContent() {
               boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1)",
             }}
           >
-            <CardContent className="text-center py-16">
-              <Description className="text-7xl text-gray-300 mb-6" />
-              <Typography
-                variant="h6"
-                className="text-gray-500 mb-3 font-semibold"
-              >
-                No files yet
-              </Typography>
-              <Box className="flex gap-3 mt-4 justify-center">
-                <Button
-                  variant="contained"
-                  onClick={() => router.push("/upload")}
-                  startIcon={<CloudUpload />}
-                  sx={{
-                    backgroundColor: "#dc2626",
-                    "&:hover": {
-                      backgroundColor: "#b91c1c",
-                    },
-                    px: 3,
-                    py: 1.5,
-                  }}
-                >
-                  Upload PDF
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={() => router.push("/ocr")}
-                  startIcon={<TextFields />}
-                  sx={{
-                    borderColor: "#7c3aed",
-                    color: "#7c3aed",
-                    "&:hover": {
-                      backgroundColor: "#f3f4f6",
-                      borderColor: "#6d28d9",
-                    },
-                    px: 3,
-                    py: 1.5,
-                  }}
-                >
-                  Try OCR
-                </Button>
-              </Box>
+            <CardContent>
+              {recentFiles.length > 0 ? (
+                <Box>
+                  {recentFiles.map((file) => (
+                    <Box
+                      key={file.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        py: 2,
+                        borderBottom: "1px solid #e5e7eb",
+                        "&:last-child": { borderBottom: "none" },
+                      }}
+                    >
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        <Description className="text-gray-400" />
+                        <Box>
+                          <Typography variant="body1" className="font-medium">
+                            {file.filename}
+                          </Typography>
+                          <Typography variant="body2" className="text-gray-500">
+                            {(file.file_size / 1024 / 1024).toFixed(2)} MB •{" "}
+                            {new Date(file.upload_date).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Chip
+                          label={file.status}
+                          size="small"
+                          color={
+                            file.status === "ready"
+                              ? "success"
+                              : file.status === "processing"
+                              ? "warning"
+                              : file.status === "error"
+                              ? "error"
+                              : "default"
+                          }
+                        />
+                        {file.ocr_status === "completed" && (
+                          <Chip
+                            label="OCR"
+                            size="small"
+                            color="info"
+                            icon={<TextFields />}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+
+                  {files.length > 5 && (
+                    <Box className="text-center mt-4">
+                      <Button
+                        variant="outlined"
+                        onClick={() => router.push("/files")}
+                      >
+                        View All Files ({files.length})
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                <Box className="text-center py-16">
+                  <Description className="text-7xl text-gray-300 mb-6" />
+                  <Typography
+                    variant="h6"
+                    className="text-gray-500 mb-3 font-semibold"
+                  >
+                    No files yet
+                  </Typography>
+                  <Box className="flex gap-3 mt-4 justify-center">
+                    <Button
+                      variant="contained"
+                      onClick={() => router.push("/upload")}
+                      startIcon={<CloudUpload />}
+                      sx={{
+                        backgroundColor: "#dc2626",
+                        "&:hover": {
+                          backgroundColor: "#b91c1c",
+                        },
+                        px: 3,
+                        py: 1.5,
+                      }}
+                    >
+                      Upload PDF
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => router.push("/ocr")}
+                      startIcon={<TextFields />}
+                      sx={{
+                        borderColor: "#7c3aed",
+                        color: "#7c3aed",
+                        "&:hover": {
+                          backgroundColor: "#f3f4f6",
+                          borderColor: "#6d28d9",
+                        },
+                        px: 3,
+                        py: 1.5,
+                      }}
+                    >
+                      Try OCR
+                    </Button>
+                  </Box>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Box>

@@ -4,6 +4,7 @@ import "./globals.css";
 import ThemeProvider from "@/components/providers/ThemeProvider";
 import AuthProvider from "@/components/providers/AuthProvider";
 import ApolloProvider from "@/components/providers/ApolloProvider";
+import NotificationCenter from "@/components/ui/NotificationCenter";
 
 const roboto = Roboto({
   weight: ["300", "400", "500", "700"],
@@ -42,7 +43,10 @@ export default function RootLayout({
       <body className={`${roboto.variable} antialiased`}>
         <AuthProvider>
           <ApolloProvider>
-            <ThemeProvider>{children}</ThemeProvider>
+            <ThemeProvider>
+              {children}
+              <NotificationCenter />
+            </ThemeProvider>
           </ApolloProvider>
         </AuthProvider>
       </body>

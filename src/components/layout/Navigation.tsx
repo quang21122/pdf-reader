@@ -26,6 +26,12 @@ import {
 import NextLink from "next/link";
 import Image from "next/image";
 import { useUserMenu } from "@/hooks";
+import {
+  usePDFStore,
+  useOCRStore,
+  useUIStore,
+  useSettingsStore,
+} from "@/stores";
 
 export default function Navigation() {
   const {

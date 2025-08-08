@@ -28,6 +28,26 @@ export { useNavigation } from "./useNavigation";
 export { usePDFUrl } from "./usePDFUrl";
 export { usePDFValidation } from "./usePDFValidation";
 
+// App status hooks
+export { useAppStatus } from "./useAppStatus";
+
+// Notification hooks
+export { useNotifications, notificationUtils } from "./useNotifications";
+
+// Theme hooks
+export { useTheme, themeUtils } from "./useTheme";
+
+// File operation hooks
+export { useFileOperations, fileUtils } from "./useFileOperations";
+export {
+  useFileManagement,
+  fileUtils as fileManagementUtils,
+} from "./useFileManagement";
+export { useFileActions } from "./useFileActions";
+
+// Home page hooks
+export { useHomeRedirect } from "./useHomeRedirect";
+
 // Type exports
 export type {
   ValidationRule,
@@ -45,3 +65,5 @@ export type {
   PDFValidationResult,
 } from "./usePDFValidation";
 export type { PDFUrlState, UsePDFUrlOptions } from "./usePDFUrl";
+export type { NotificationOptions } from "./useNotifications";
+export type { PDFFile } from "./useFileManagement";
