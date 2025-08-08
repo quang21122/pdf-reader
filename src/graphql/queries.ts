@@ -1,33 +1,39 @@
-import { gql } from '@apollo/client'
+import { gql } from "@apollo/client";
 
 // PDF Files Queries
 export const GET_USER_PDF_FILES = gql`
-  query GetUserPDFFiles($userId: String!) {
-    pdf_files(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }) {
+  query GetUserPDFFiles($userId: UUID!) {
+    getPDFFiles(user_id: $userId) {
       id
+      user_id
       filename
       file_path
       file_size
       upload_date
+      public_url
+      description
       created_at
       updated_at
     }
   }
-`
+`;
 
 export const GET_PDF_FILE_BY_ID = gql`
-  query GetPDFFileById($id: String!, $userId: String!) {
-    pdf_files(where: { id: { _eq: $id }, user_id: { _eq: $userId } }) {
+  query GetPDFFileById($id: UUID!, $userId: UUID!) {
+    getPDFFile(id: $id, user_id: $userId) {
       id
+      user_id
       filename
       file_path
       file_size
       upload_date
+      public_url
+      description
       created_at
       updated_at
     }
   }
-`
+`;
 
 // Notes Queries
 export const GET_NOTES_BY_FILE = gql`
@@ -45,7 +51,7 @@ export const GET_NOTES_BY_FILE = gql`
       updated_at
     }
   }
-`
+`;
 
 export const GET_NOTE_BY_ID = gql`
   query GetNoteById($id: String!, $userId: String!) {
@@ -60,7 +66,7 @@ export const GET_NOTE_BY_ID = gql`
       updated_at
     }
   }
-`
+`;
 
 // Highlights Queries
 export const GET_HIGHLIGHTS_BY_FILE = gql`
@@ -78,7 +84,7 @@ export const GET_HIGHLIGHTS_BY_FILE = gql`
       updated_at
     }
   }
-`
+`;
 
 export const GET_HIGHLIGHT_BY_ID = gql`
   query GetHighlightById($id: String!, $userId: String!) {
@@ -93,7 +99,7 @@ export const GET_HIGHLIGHT_BY_ID = gql`
       updated_at
     }
   }
-`
+`;
 
 // OCR Results Queries
 export const GET_OCR_RESULTS_BY_FILE = gql`
@@ -110,7 +116,7 @@ export const GET_OCR_RESULTS_BY_FILE = gql`
       updated_at
     }
   }
-`
+`;
 
 export const GET_OCR_RESULT_BY_PAGE = gql`
   query GetOCRResultByPage($fileId: String!, $pageNumber: Int!) {
@@ -125,7 +131,7 @@ export const GET_OCR_RESULT_BY_PAGE = gql`
       updated_at
     }
   }
-`
+`;
 
 // Search Queries
 export const SEARCH_IN_FILES = gql`
@@ -146,7 +152,7 @@ export const SEARCH_IN_FILES = gql`
       }
     }
   }
-`
+`;
 
 // Dashboard/Statistics Queries
 export const GET_USER_STATS = gql`
@@ -167,4 +173,4 @@ export const GET_USER_STATS = gql`
       }
     }
   }
-`
+`;

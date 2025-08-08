@@ -1,39 +1,48 @@
-import { gql } from '@apollo/client'
+import { gql } from "@apollo/client";
 
 // PDF Files Mutations
 export const INSERT_PDF_FILE = gql`
-  mutation InsertPDFFile($object: pdf_files_insert_input!) {
-    insert_pdf_files_one(object: $object) {
+  mutation InsertPDFFile($object: PDFFileInput!) {
+    insertPDFFile(object: $object) {
       id
+      user_id
       filename
       file_path
       file_size
       upload_date
+      public_url
+      description
       created_at
-    }
-  }
-`
-
-export const UPDATE_PDF_FILE = gql`
-  mutation UpdatePDFFile($id: String!, $changes: pdf_files_set_input!) {
-    update_pdf_files_by_pk(pk_columns: { id: $id }, _set: $changes) {
-      id
-      filename
-      file_path
-      file_size
       updated_at
     }
   }
-`
+`;
+
+export const UPDATE_PDF_FILE = gql`
+  mutation UpdatePDFFile($id: UUID!, $changes: PDFFileUpdateInput!) {
+    updatePDFFile(id: $id, changes: $changes) {
+      id
+      user_id
+      filename
+      file_path
+      file_size
+      upload_date
+      public_url
+      description
+      created_at
+      updated_at
+    }
+  }
+`;
 
 export const DELETE_PDF_FILE = gql`
-  mutation DeletePDFFile($id: String!) {
-    delete_pdf_files_by_pk(id: $id) {
+  mutation DeletePDFFile($id: UUID!) {
+    deletePDFFile(id: $id) {
       id
       filename
     }
   }
-`
+`;
 
 // Notes Mutations
 export const INSERT_NOTE = gql`
@@ -47,7 +56,7 @@ export const INSERT_NOTE = gql`
       created_at
     }
   }
-`
+`;
 
 export const UPDATE_NOTE = gql`
   mutation UpdateNote($id: String!, $changes: notes_set_input!) {
@@ -60,7 +69,7 @@ export const UPDATE_NOTE = gql`
       updated_at
     }
   }
-`
+`;
 
 export const DELETE_NOTE = gql`
   mutation DeleteNote($id: String!) {
@@ -69,7 +78,7 @@ export const DELETE_NOTE = gql`
       content
     }
   }
-`
+`;
 
 // Highlights Mutations
 export const INSERT_HIGHLIGHT = gql`
@@ -83,7 +92,7 @@ export const INSERT_HIGHLIGHT = gql`
       created_at
     }
   }
-`
+`;
 
 export const UPDATE_HIGHLIGHT = gql`
   mutation UpdateHighlight($id: String!, $changes: highlights_set_input!) {
@@ -96,7 +105,7 @@ export const UPDATE_HIGHLIGHT = gql`
       updated_at
     }
   }
-`
+`;
 
 export const DELETE_HIGHLIGHT = gql`
   mutation DeleteHighlight($id: String!) {
@@ -105,7 +114,7 @@ export const DELETE_HIGHLIGHT = gql`
       text_content
     }
   }
-`
+`;
 
 // OCR Results Mutations
 export const INSERT_OCR_RESULT = gql`
@@ -118,7 +127,7 @@ export const INSERT_OCR_RESULT = gql`
       created_at
     }
   }
-`
+`;
 
 export const INSERT_MULTIPLE_OCR_RESULTS = gql`
   mutation InsertMultipleOCRResults($objects: [ocr_results_insert_input!]!) {
@@ -132,7 +141,7 @@ export const INSERT_MULTIPLE_OCR_RESULTS = gql`
       }
     }
   }
-`
+`;
 
 export const UPDATE_OCR_RESULT = gql`
   mutation UpdateOCRResult($id: String!, $changes: ocr_results_set_input!) {
@@ -144,7 +153,7 @@ export const UPDATE_OCR_RESULT = gql`
       updated_at
     }
   }
-`
+`;
 
 export const DELETE_OCR_RESULT = gql`
   mutation DeleteOCRResult($id: String!) {
@@ -153,7 +162,7 @@ export const DELETE_OCR_RESULT = gql`
       page_number
     }
   }
-`
+`;
 
 // Batch Operations
 export const DELETE_FILE_AND_RELATED_DATA = gql`
@@ -172,4 +181,4 @@ export const DELETE_FILE_AND_RELATED_DATA = gql`
       filename
     }
   }
-`
+`;

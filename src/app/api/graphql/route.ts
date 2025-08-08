@@ -1,56 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ApolloServer } from "@apollo/server";
+import { startServerAndCreateNextHandler } from "@as-integrations/next";
+import { NextRequest } from "next/server";
+import { typeDefs } from "@/graphql/schema";
+import { resolvers } from "@/graphql/resolvers";
 
-// This is a placeholder for GraphQL endpoint
-// In a real implementation, you would either:
-// 1. Use Hasura or Postgraphile with Supabase
-// 2. Implement a custom GraphQL server with Apollo Server
-// 3. Use Supabase's REST API directly
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  introspection: true, // Enable GraphQL Playground in development
+  includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
+});
 
-export async function POST(request: NextRequest) {
-  try {
-    // Parse request body but don't use variables for now since endpoint is not implemented
-    await request.json();
+const handler = startServerAndCreateNextHandler(server, {
+  context: async (req: NextRequest) => {
+    // Get authorization token from headers
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
 
-    // For now, return a placeholder response
-    return NextResponse.json({
-      data: null,
-      errors: [
-        {
-          message:
-            "GraphQL endpoint not implemented yet. Please use Supabase REST API directly or configure Hasura/Postgraphile.",
-          extensions: {
-            code: "NOT_IMPLEMENTED",
-          },
-        },
-      ],
-    });
-  } catch (error) {
-    console.error("GraphQL API Error:", error);
-    return NextResponse.json(
-      {
-        errors: [
-          {
-            message: "Internal server error",
-            extensions: {
-              code: "INTERNAL_ERROR",
-            },
-          },
-        ],
-      },
-      { status: 500 }
-    );
-  }
+    return {
+      token,
+      req,
+      headers: req.headers,
+    };
+  },
+});
+
+export async function GET(request: NextRequest) {
+  return handler(request);
 }
 
-export async function GET() {
-  return NextResponse.json({
-    message: "GraphQL endpoint",
-    status:
-      "Not implemented - Use Supabase REST API or configure external GraphQL service",
-    suggestions: [
-      "Use Hasura with Supabase: https://hasura.io/docs/latest/databases/postgres/supabase/",
-      "Use Postgraphile: https://www.graphile.org/postgraphile/",
-      "Use Supabase REST API directly",
-    ],
-  });
+export async function POST(request: NextRequest) {
+  return handler(request);
 }
