@@ -9,22 +9,16 @@ import {
   CardContent,
   Button,
   Alert,
-  LinearProgress,
   Divider,
 } from "@mui/material";
 import { CloudUpload, TextFields } from "@mui/icons-material";
-import { useAuth } from "@/components/providers/AuthProvider";
-import { useRouter } from "next/navigation";
 import Navigation from "@/components/layout/Navigation";
 import AuthGuard from "@/components/auth/AuthGuard";
 import OCRProcessor from "@/components/ocr/OCRProcessor";
 
 function OCRContent() {
-  const { user } = useAuth();
-  const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +26,7 @@ function OCRContent() {
     if (file && file.type === "application/pdf") {
       setSelectedFile(file);
       setUploadError(null);
-      
+
       // Create object URL for the PDF
       const url = URL.createObjectURL(file);
       setPdfUrl(url);
@@ -43,7 +37,13 @@ function OCRContent() {
     }
   };
 
-  const handleOCRResults = (results: any[]) => {
+  const handleOCRResults = (
+    results: Array<{
+      pageNumber: number;
+      text: string;
+      confidence: number;
+    }>
+  ) => {
     console.log("OCR Results:", results);
     // You can handle the results here, e.g., save to database
   };
@@ -80,7 +80,7 @@ function OCRContent() {
               <Typography variant="body1" className="text-gray-600 mb-6">
                 Select a PDF file to extract text using OCR technology
               </Typography>
-              
+
               {uploadError && (
                 <Alert severity="error" className="mb-4 max-w-md mx-auto">
                   {uploadError}
@@ -133,11 +133,7 @@ function OCRContent() {
                       {selectedFile?.name}
                     </Typography>
                   </Box>
-                  <Button
-                    variant="outlined"
-                    onClick={resetFile}
-                    color="error"
-                  >
+                  <Button variant="outlined" onClick={resetFile} color="error">
                     Remove File
                   </Button>
                 </Box>
@@ -147,10 +143,7 @@ function OCRContent() {
 
             <Card sx={{ backgroundColor: "white" }}>
               <CardContent>
-                <OCRProcessor
-                  pdfUrl={pdfUrl}
-                  onResults={handleOCRResults}
-                />
+                <OCRProcessor pdfUrl={pdfUrl} onResults={handleOCRResults} />
               </CardContent>
             </Card>
           </Box>
@@ -163,13 +156,15 @@ function OCRContent() {
                 About OCR Processing
               </Typography>
               <Typography variant="body2" className="text-gray-600 mb-2">
-                • OCR (Optical Character Recognition) extracts text from PDF images
+                • OCR (Optical Character Recognition) extracts text from PDF
+                images
               </Typography>
               <Typography variant="body2" className="text-gray-600 mb-2">
                 • Processing is done locally in your browser for privacy
               </Typography>
               <Typography variant="body2" className="text-gray-600 mb-2">
-                • Supports multiple languages including English, Vietnamese, and more
+                • Supports multiple languages including English, Vietnamese, and
+                more
               </Typography>
               <Typography variant="body2" className="text-gray-600">
                 • Results can be copied, searched, and exported
