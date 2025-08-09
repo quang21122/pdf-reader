@@ -3,6 +3,8 @@ import {
   UPDATE_PDF_FILE,
   DELETE_PDF_FILE_WITH_STORAGE,
   GET_PDF_FILE_URL,
+  SOFT_DELETE_PDF_FILE,
+  RESTORE_PDF_FILE,
 } from "@/graphql/mutations";
 import { GET_USER_PDF_FILES, GET_PDF_FILE_BY_ID } from "@/graphql/queries";
 import { supabase } from "@/utils/supabaseClient";
@@ -125,7 +127,63 @@ export async function getUserPDFFiles(userId: string) {
 }
 
 /**
- * Delete PDF file from storage and database using GraphQL
+ * Soft delete PDF file (move to trash) using GraphQL
+ */
+export async function softDeletePDFFile(fileId: string, userId: string) {
+  try {
+    const { data: gqlData } = await apolloClient.mutate({
+      mutation: SOFT_DELETE_PDF_FILE,
+      variables: {
+        id: fileId,
+        user_id: userId,
+      },
+    });
+
+    if (!gqlData?.softDeletePDFFile) {
+      throw new Error("Failed to move file to trash");
+    }
+
+    return gqlData.softDeletePDFFile;
+  } catch (error) {
+    console.error("GraphQL soft delete file error:", error);
+    throw new Error(
+      `Failed to move file to trash: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Restore PDF file from trash using GraphQL
+ */
+export async function restorePDFFile(fileId: string, userId: string) {
+  try {
+    const { data: gqlData } = await apolloClient.mutate({
+      mutation: RESTORE_PDF_FILE,
+      variables: {
+        id: fileId,
+        user_id: userId,
+      },
+    });
+
+    if (!gqlData?.restorePDFFile) {
+      throw new Error("Failed to restore file");
+    }
+
+    return gqlData.restorePDFFile;
+  } catch (error) {
+    console.error("GraphQL restore file error:", error);
+    throw new Error(
+      `Failed to restore file: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Permanently delete PDF file from storage and database using GraphQL
  */
 export async function deletePDFFile(fileId: string, userId: string) {
   try {

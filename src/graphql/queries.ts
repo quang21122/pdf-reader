@@ -12,6 +12,7 @@ export const GET_USER_PDF_FILES = gql`
       upload_date
       public_url
       description
+      deleted_at
       created_at
       updated_at
     }
@@ -29,6 +30,25 @@ export const GET_PDF_FILE_BY_ID = gql`
       upload_date
       public_url
       description
+      deleted_at
+      created_at
+      updated_at
+    }
+  }
+`;
+
+export const GET_DELETED_PDF_FILES = gql`
+  query GetDeletedPDFFiles($userId: UUID!) {
+    getDeletedPDFFiles(user_id: $userId) {
+      id
+      user_id
+      filename
+      file_path
+      file_size
+      upload_date
+      public_url
+      description
+      deleted_at
       created_at
       updated_at
     }

@@ -93,10 +93,34 @@ export const resolvers = {
         .from("pdf_files")
         .select("*")
         .eq("user_id", user_id)
+        .is("deleted_at", null)
         .order("upload_date", { ascending: false });
 
       if (error) {
         throw new Error(`Failed to fetch PDF files: ${error.message}`);
+      }
+
+      return data || [];
+    },
+
+    async getDeletedPDFFiles(
+      _: unknown,
+      { user_id }: { user_id: string },
+      context: ResolverContext
+    ) {
+      const authenticatedSupabase = getAuthenticatedSupabaseClient(
+        context.token
+      );
+
+      const { data, error } = await authenticatedSupabase
+        .from("pdf_files")
+        .select("*")
+        .eq("user_id", user_id)
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+
+      if (error) {
+        throw new Error(`Failed to fetch deleted PDF files: ${error.message}`);
       }
 
       return data || [];
@@ -258,6 +282,61 @@ export const resolvers = {
 
       if (error) {
         throw new Error(`Failed to delete PDF file: ${error.message}`);
+      }
+
+      return data;
+    },
+
+    // Soft Delete Operations
+    async softDeletePDFFile(
+      _: unknown,
+      { id, user_id }: { id: string; user_id: string },
+      context: ResolverContext
+    ) {
+      const authenticatedSupabase = getAuthenticatedSupabaseClient(
+        context.token
+      );
+
+      const { data, error } = await authenticatedSupabase
+        .from("pdf_files")
+        .update({
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .eq("user_id", user_id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to soft delete PDF file: ${error.message}`);
+      }
+
+      return data;
+    },
+
+    async restorePDFFile(
+      _: unknown,
+      { id, user_id }: { id: string; user_id: string },
+      context: ResolverContext
+    ) {
+      const authenticatedSupabase = getAuthenticatedSupabaseClient(
+        context.token
+      );
+
+      const { data, error } = await authenticatedSupabase
+        .from("pdf_files")
+        .update({
+          deleted_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .eq("user_id", user_id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to restore PDF file: ${error.message}`);
       }
 
       return data;

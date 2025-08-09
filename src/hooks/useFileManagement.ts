@@ -4,6 +4,7 @@ import { useNotifications } from "./useNotifications";
 import {
   getUserPDFFiles,
   deletePDFFile,
+  softDeletePDFFile,
   getPDFDownloadUrl,
 } from "@/utils/uploadUtils";
 
@@ -87,17 +88,17 @@ export const useFileManagement = () => {
 
     try {
       setDeleting(true);
-      await deletePDFFile(file.id, user.id);
+      await softDeletePDFFile(file.id, user.id);
       setFiles((prevFiles) => prevFiles.filter((f) => f.id !== file.id));
       notificationsRef.current.success(
-        "File Deleted",
-        `${file.filename} has been removed`
+        "File Moved to Trash",
+        `${file.filename} has been moved to trash`
       );
       return true;
     } catch (err) {
-      console.error("Delete error:", err);
+      console.error("Soft delete error:", err);
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to delete file";
+        err instanceof Error ? err.message : "Failed to move file to trash";
       setError(errorMessage);
       notificationsRef.current.error("Delete Failed", errorMessage);
       return false;

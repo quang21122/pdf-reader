@@ -13,6 +13,7 @@ export const typeDefs = gql`
     upload_date: DateTime!
     public_url: String
     description: String
+    deleted_at: DateTime
     created_at: DateTime!
     updated_at: DateTime!
   }
@@ -80,6 +81,7 @@ export const typeDefs = gql`
     # PDF Files
     getPDFFiles(user_id: UUID!): [PDFFile!]!
     getPDFFile(id: UUID!, user_id: UUID!): PDFFile
+    getDeletedPDFFiles(user_id: UUID!): [PDFFile!]!
 
     # OCR Results
     getOCRResults(file_id: UUID!, user_id: UUID!): [OCRResult!]!
@@ -95,6 +97,10 @@ export const typeDefs = gql`
     insertPDFFile(object: PDFFileInput!): PDFFile!
     updatePDFFile(id: UUID!, changes: PDFFileUpdateInput!): PDFFile!
     deletePDFFile(id: UUID!): PDFFile!
+
+    # Soft Delete Operations
+    softDeletePDFFile(id: UUID!, user_id: UUID!): PDFFile!
+    restorePDFFile(id: UUID!, user_id: UUID!): PDFFile!
 
     # File Storage Operations (no upload via GraphQL)
     deletePDFFileWithStorage(id: UUID!, user_id: UUID!): PDFFile!

@@ -44,6 +44,29 @@ export const DELETE_PDF_FILE = gql`
   }
 `;
 
+// Soft Delete Operations
+export const SOFT_DELETE_PDF_FILE = gql`
+  mutation SoftDeletePDFFile($id: UUID!, $user_id: UUID!) {
+    softDeletePDFFile(id: $id, user_id: $user_id) {
+      id
+      filename
+      deleted_at
+      updated_at
+    }
+  }
+`;
+
+export const RESTORE_PDF_FILE = gql`
+  mutation RestorePDFFile($id: UUID!, $user_id: UUID!) {
+    restorePDFFile(id: $id, user_id: $user_id) {
+      id
+      filename
+      deleted_at
+      updated_at
+    }
+  }
+`;
+
 // File Storage Operations (upload handled by REST API)
 export const DELETE_PDF_FILE_WITH_STORAGE = gql`
   mutation DeletePDFFileWithStorage($id: UUID!, $user_id: UUID!) {

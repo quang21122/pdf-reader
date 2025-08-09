@@ -22,6 +22,7 @@ import {
   Settings,
   Dashboard,
   Description,
+  Delete,
 } from "@mui/icons-material";
 import NextLink from "next/link";
 import Image from "next/image";
@@ -120,6 +121,21 @@ export default function Navigation() {
                   }}
                 >
                   Upload PDF
+                </Button>
+              </NextLink>
+              <NextLink href="/trash" passHref>
+                <Button
+                  startIcon={<Delete />}
+                  sx={{
+                    color: "#64748b",
+                    textTransform: "none",
+                    "&:hover": {
+                      color: "#dc2626",
+                      backgroundColor: "transparent",
+                    },
+                  }}
+                >
+                  Trash
                 </Button>
               </NextLink>
             </>

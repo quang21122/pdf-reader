@@ -24,25 +24,27 @@ export default function DeleteConfirmDialog({
   onClose,
   onConfirm,
 }: DeleteConfirmDialogProps) {
+  // Get filename with fallbacks
+  const getFileName = () => {
+    if (!file) return "this file";
+    return file.filename || (file as any).name || file.id || "this file";
+  };
+
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Delete File</DialogTitle>
+      <DialogTitle>Move to Trash</DialogTitle>
       <DialogContent>
         <Typography>
-          Are you sure you want to delete &quot;{file?.filename}&quot;? 
-          This action cannot be undone.
+          Are you sure you want to move &quot;{getFileName()}&quot; to trash?
+          You can restore it later from the trash.
         </Typography>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={deleting}>
           Cancel
         </Button>
-        <Button
-          onClick={onConfirm}
-          color="error"
-          disabled={deleting}
-        >
-          {deleting ? "Deleting..." : "Delete"}
+        <Button onClick={onConfirm} color="error" disabled={deleting}>
+          {deleting ? "Moving to Trash..." : "Move to Trash"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -8,6 +8,7 @@ interface FileGridProps {
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, file: PDFFile) => void;
   onView: (file: PDFFile) => void;
   onOCR: (file: PDFFile) => void;
+  onDelete: (file: PDFFile) => void;
 }
 
 export default function FileGrid({
@@ -15,6 +16,7 @@ export default function FileGrid({
   onMenuOpen,
   onView,
   onOCR,
+  onDelete,
 }: FileGridProps) {
   return (
     <Box
@@ -35,6 +37,7 @@ export default function FileGrid({
           onMenuOpen={onMenuOpen}
           onView={onView}
           onOCR={onOCR}
+          onDelete={onDelete}
         />
       ))}
     </Box>

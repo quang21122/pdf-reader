@@ -13,6 +13,7 @@ import {
   MoreVert,
   Visibility,
   TextFields,
+  Delete,
 } from "@mui/icons-material";
 import type { PDFFile } from "@/hooks/useFileManagement";
 import { fileUtils } from "@/hooks/useFileManagement";
@@ -22,6 +23,7 @@ interface FileCardProps {
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, file: PDFFile) => void;
   onView: (file: PDFFile) => void;
   onOCR: (file: PDFFile) => void;
+  onDelete: (file: PDFFile) => void;
 }
 
 export default function FileCard({
@@ -29,6 +31,7 @@ export default function FileCard({
   onMenuOpen,
   onView,
   onOCR,
+  onDelete,
 }: FileCardProps) {
   return (
     <Card
@@ -44,12 +47,24 @@ export default function FileCard({
       <CardContent className="p-4">
         <Box className="flex justify-between items-start mb-3">
           <Description className="text-red-500 text-3xl" />
-          <IconButton
-            size="small"
-            onClick={(e) => onMenuOpen(e, file)}
-          >
-            <MoreVert />
-          </IconButton>
+          <Box className="flex gap-1">
+            <IconButton size="small" onClick={(e) => onMenuOpen(e, file)}>
+              <MoreVert />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => onDelete(file)}
+              sx={{
+                color: "#ef4444",
+                "&:hover": {
+                  backgroundColor: "#fef2f2",
+                },
+              }}
+              title="Move to trash"
+            >
+              <Delete fontSize="small" />
+            </IconButton>
+          </Box>
         </Box>
 
         <Typography
@@ -70,12 +85,7 @@ export default function FileCard({
               borderColor: "#e5e7eb",
             }}
           />
-          <Chip
-            label="PDF"
-            size="small"
-            color="error"
-            variant="outlined"
-          />
+          <Chip label="PDF" size="small" color="error" variant="outlined" />
         </Box>
 
         <Typography variant="body2" className="text-gray-500 mb-4">

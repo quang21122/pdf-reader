@@ -30,6 +30,7 @@ function FilesContent() {
     anchorEl,
     selectedFile,
     deleteDialogOpen,
+    fileToDelete,
     handleMenuOpen,
     handleMenuClose,
     handleView,
@@ -50,6 +51,11 @@ function FilesContent() {
   // Handle delete confirmation
   const handleDeleteConfirmAction = async () => {
     await handleDeleteConfirm(deleteFile);
+  };
+
+  // Handle delete click with file parameter
+  const handleDeleteFile = (file: any) => {
+    handleDeleteClick(file);
   };
 
   // Show loading state
@@ -81,6 +87,7 @@ function FilesContent() {
             onMenuOpen={handleMenuOpen}
             onView={handleView}
             onOCR={handleOCR}
+            onDelete={handleDeleteFile}
           />
         )}
 
@@ -97,7 +104,7 @@ function FilesContent() {
 
         <DeleteConfirmDialog
           open={deleteDialogOpen}
-          file={selectedFile}
+          file={fileToDelete || selectedFile}
           deleting={deleting}
           onClose={handleDeleteCancel}
           onConfirm={handleDeleteConfirmAction}

@@ -8,10 +8,11 @@ import type { PDFFile } from "./useFileManagement";
  */
 export const useFileActions = () => {
   const router = useRouter();
-  
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedFile, setSelectedFile] = useState<PDFFile | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<PDFFile | null>(null);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -23,37 +24,53 @@ export const useFileActions = () => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setSelectedFile(null);
+    // Don't reset selectedFile here as it might be needed for delete dialog
   };
 
   const handleView = (file: PDFFile) => {
     router.push(`/viewer/${file.id}`);
     handleMenuClose();
+    setSelectedFile(null);
   };
 
   const handleOCR = (file: PDFFile) => {
     router.push(`/ocr?fileId=${file.id}`);
     handleMenuClose();
+    setSelectedFile(null);
   };
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = (file?: PDFFile) => {
+    // Close menu first if it's open
+    if (anchorEl) {
+      handleMenuClose();
+    }
+
+    // Set file to delete
+    if (file) {
+      setFileToDelete(file);
+      setSelectedFile(file);
+    }
+
+    // Open dialog
     setDeleteDialogOpen(true);
-    handleMenuClose();
   };
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
+    setFileToDelete(null);
     setSelectedFile(null);
   };
 
   const handleDeleteConfirm = async (
     deleteFunction: (file: PDFFile) => Promise<boolean>
   ) => {
-    if (!selectedFile) return false;
+    const fileToProcess = fileToDelete || selectedFile;
+    if (!fileToProcess) return false;
 
-    const success = await deleteFunction(selectedFile);
+    const success = await deleteFunction(fileToProcess);
     if (success) {
       setDeleteDialogOpen(false);
+      setFileToDelete(null);
       setSelectedFile(null);
     }
     return success;
@@ -68,21 +85,22 @@ export const useFileActions = () => {
     anchorEl,
     selectedFile,
     deleteDialogOpen,
-    
+    fileToDelete,
+
     // Menu actions
     handleMenuOpen,
     handleMenuClose,
-    
+
     // File actions
     handleView,
     handleOCR,
     handleDeleteClick,
     handleDeleteCancel,
     handleDeleteConfirm,
-    
+
     // Navigation
     navigateToUpload,
-    
+
     // Computed
     isMenuOpen: Boolean(anchorEl),
   };
