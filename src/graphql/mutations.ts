@@ -44,24 +44,7 @@ export const DELETE_PDF_FILE = gql`
   }
 `;
 
-// File Upload with Storage Operations
-export const UPLOAD_PDF_FILE = gql`
-  mutation UploadPDFFile($input: FileUploadInput!) {
-    uploadPDFFile(input: $input) {
-      id
-      user_id
-      filename
-      file_path
-      file_size
-      upload_date
-      public_url
-      description
-      created_at
-      updated_at
-    }
-  }
-`;
-
+// File Storage Operations (upload handled by REST API)
 export const DELETE_PDF_FILE_WITH_STORAGE = gql`
   mutation DeletePDFFileWithStorage($id: UUID!, $user_id: UUID!) {
     deletePDFFileWithStorage(id: $id, user_id: $user_id) {

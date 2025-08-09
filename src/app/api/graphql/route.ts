@@ -3,17 +3,9 @@ import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { NextRequest } from "next/server";
 import { typeDefs } from "@/graphql/schema";
 import { resolvers } from "@/graphql/resolvers";
-import { GraphQLUpload } from "graphql-upload-minimal";
-
-// Add Upload scalar to resolvers
-const resolversWithUpload = {
-  ...resolvers,
-  Upload: GraphQLUpload,
-};
-
 const server = new ApolloServer({
   typeDefs,
-  resolvers: resolversWithUpload,
+  resolvers,
   introspection: true, // Enable GraphQL Playground in development
   includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
 });

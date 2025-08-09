@@ -6,7 +6,6 @@ import {
 } from "@/graphql/mutations";
 import { GET_USER_PDF_FILES, GET_PDF_FILE_BY_ID } from "@/graphql/queries";
 import { supabase } from "@/utils/supabaseClient";
-import type { FetchPolicy } from "@apollo/client";
 
 export interface UploadResult {
   id: string;

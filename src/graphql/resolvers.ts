@@ -1,7 +1,6 @@
 import { supabase } from "@/utils/supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 import { GraphQLScalarType, Kind } from "graphql";
-import { v4 as uuidv4 } from "uuid";
 
 // Types for resolver arguments
 interface PDFFileInput {
@@ -19,12 +18,6 @@ interface ResolverContext {
   token?: string;
   req: Request;
   headers: Headers;
-}
-
-interface FileUploadInput {
-  file: File;
-  user_id: string;
-  filename: string;
 }
 
 // Create authenticated Supabase client
@@ -270,103 +263,7 @@ export const resolvers = {
       return data;
     },
 
-    // File Upload with Storage Operations
-    async uploadPDFFile(
-      _: unknown,
-      { input }: { input: { file: File; user_id: string; filename: string } },
-      context: ResolverContext
-    ) {
-      const authenticatedSupabase = getAuthenticatedSupabaseClient(
-        context.token
-      );
-
-      try {
-        const { file, user_id, filename } = input;
-
-        console.log("Upload input:", { file, user_id, filename });
-        console.log("File details:", {
-          type: file?.type,
-          size: file?.size,
-          name: file?.name,
-        });
-
-        // Validate file
-        if (!file) {
-          throw new Error("No file provided");
-        }
-
-        // Check file type - accept both MIME type and file extension
-        const isValidPDF =
-          file.type === "application/pdf" ||
-          filename.toLowerCase().endsWith(".pdf");
-
-        if (!isValidPDF) {
-          throw new Error(
-            `Invalid file type. Expected PDF, got: ${file.type || "unknown"}`
-          );
-        }
-
-        // Check file size (50MB limit)
-        const maxSize = 50 * 1024 * 1024; // 50MB in bytes
-        if (file.size > maxSize) {
-          throw new Error("File size must be less than 50MB");
-        }
-
-        // Generate unique file ID and path
-        const fileId = uuidv4();
-        const fileExtension = "pdf";
-        const fileName = `${fileId}.${fileExtension}`;
-        const filePath = `${user_id}/${fileName}`;
-
-        // Upload file to Supabase Storage
-        const { error: uploadError } = await authenticatedSupabase.storage
-          .from("pdf")
-          .upload(filePath, file, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw new Error(`Upload failed: ${uploadError.message}`);
-        }
-
-        // Get the public URL for the uploaded file
-        const { data: urlData } = authenticatedSupabase.storage
-          .from("pdf")
-          .getPublicUrl(filePath);
-
-        // Save file metadata to database
-        const fileMetadata = {
-          id: fileId,
-          user_id: user_id,
-          filename: filename,
-          file_path: filePath,
-          file_size: file.size,
-          upload_date: new Date().toISOString(),
-          public_url: urlData.publicUrl,
-        };
-
-        const { data, error } = await authenticatedSupabase
-          .from("pdf_files")
-          .insert([fileMetadata])
-          .select()
-          .single();
-
-        if (error) {
-          // If database insert fails, clean up the uploaded file
-          await authenticatedSupabase.storage.from("pdf").remove([filePath]);
-          throw new Error(`Failed to save file metadata: ${error.message}`);
-        }
-
-        return data;
-      } catch (error) {
-        throw new Error(
-          `Upload failed: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-      }
-    },
+    // File Storage Operations (upload handled by REST API)
 
     async deletePDFFileWithStorage(
       _: unknown,

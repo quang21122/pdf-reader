@@ -58,27 +58,6 @@ export const typeDefs = gql`
     description: String
   }
 
-  input FileUploadInput {
-    file: Upload!
-    user_id: UUID!
-    filename: String!
-  }
-
-  type FileUploadResult {
-    id: UUID!
-    user_id: UUID!
-    filename: String!
-    file_path: String!
-    file_size: Int!
-    upload_date: DateTime!
-    public_url: String!
-    description: String
-    created_at: DateTime!
-    updated_at: DateTime!
-  }
-
-  scalar Upload
-
   input OCRResultInput {
     file_id: UUID!
     user_id: UUID!
@@ -117,8 +96,7 @@ export const typeDefs = gql`
     updatePDFFile(id: UUID!, changes: PDFFileUpdateInput!): PDFFile!
     deletePDFFile(id: UUID!): PDFFile!
 
-    # File Upload with Storage
-    uploadPDFFile(input: FileUploadInput!): FileUploadResult!
+    # File Storage Operations (no upload via GraphQL)
     deletePDFFileWithStorage(id: UUID!, user_id: UUID!): PDFFile!
     getPDFFileUrl(file_path: String!): String!
 
