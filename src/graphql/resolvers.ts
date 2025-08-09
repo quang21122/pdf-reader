@@ -412,13 +412,39 @@ export const resolvers = {
       );
 
       try {
-        const { data } = authenticatedSupabase.storage
-          .from("pdf")
-          .getPublicUrl(file_path);
+        // Clean the file path - remove any leading slashes or bucket name
+        let cleanPath = file_path;
+        if (cleanPath.startsWith("/")) {
+          cleanPath = cleanPath.substring(1);
+        }
+        // Remove bucket name if it's included in the path
+        if (cleanPath.startsWith("pdf-files/")) {
+          cleanPath = cleanPath.substring(10);
+        }
+        if (cleanPath.startsWith("pdf/")) {
+          cleanPath = cleanPath.substring(4);
+        }
 
-        return data.publicUrl;
+        // Use signed URL instead of public URL for better security and access control
+        const { data, error } = await authenticatedSupabase.storage
+          .from("pdf")
+          .createSignedUrl(cleanPath, 3600); // 1 hour expiry
+
+        if (error) {
+          throw new Error(`Storage error: ${error.message}`);
+        }
+
+        if (!data?.signedUrl) {
+          throw new Error("No signed URL returned from Supabase");
+        }
+
+        return data.signedUrl;
       } catch (error) {
-        throw new Error("Failed to get file URL");
+        throw new Error(
+          `Failed to get file URL: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
       }
     },
 

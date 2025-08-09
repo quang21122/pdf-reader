@@ -3,6 +3,9 @@ export { usePDFStore } from "./pdfStore";
 export { useOCRStore } from "./ocrStore";
 export { useUIStore } from "./uiStore";
 export { useSettingsStore } from "./settingsStore";
+export { usePDFViewerStore } from "./pdfViewerStore";
+export { useFileViewerStore } from "./fileViewerStore";
+export { useUploadStore } from "./uploadStore";
 
 // Export types
 export type {

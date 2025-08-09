@@ -43,7 +43,11 @@ export default function AppStatusBar({
   collapsible = true,
   showDetails = false,
 }: AppStatusBarProps) {
-  const [expanded, setExpanded] = React.useState(showDetails);
+  // Use UI store for expanded state
+  const { modal_states, toggleModal } = useUIStore();
+  const expanded = modal_states["status-bar-expanded"] || showDetails;
+
+  const handleToggleExpanded = () => toggleModal("status-bar-expanded");
 
   // Store data
   const { files, isUploading, uploadProgress } = usePDFStore();
@@ -209,7 +213,7 @@ export default function AppStatusBar({
           {collapsible && (
             <IconButton
               size="small"
-              onClick={() => setExpanded(!expanded)}
+              onClick={handleToggleExpanded}
               sx={{ ml: 1 }}
             >
               {expanded ? <ExpandLess /> : <ExpandMore />}

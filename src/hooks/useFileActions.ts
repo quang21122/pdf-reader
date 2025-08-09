@@ -28,7 +28,7 @@ export const useFileActions = () => {
   };
 
   const handleView = (file: PDFFile) => {
-    router.push(`/viewer/${file.id}`);
+    router.push(`/files/${file.id}`);
     handleMenuClose();
     setSelectedFile(null);
   };

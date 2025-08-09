@@ -43,4 +43,12 @@ next-env.d.ts
 # project documentation (contains sensitive information)
 PROJECT_DOCUMENTATION.md
 
+# internal documentation files
+ZUSTAND_GUIDE.md
+PDF_VIEWER_TECHNICAL.md
+UPLOAD_FLOW_TECHNICAL.md
+OCR_TECHNICAL.md
+AUTHENTICATION_TECHNICAL.md
+DATABASE_SCHEMA.md
+
 .vercel

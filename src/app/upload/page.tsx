@@ -24,24 +24,16 @@ import { useRouter } from "next/navigation";
 import Navigation from "@/components/layout/Navigation";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { uploadPDFToSupabase } from "@/utils/uploadUtils";
-import { usePDFStore, useUIStore, useSettingsStore } from "@/stores";
-
-interface UploadState {
-  isUploading: boolean;
-  progress: number;
-  error: string | null;
-  success: boolean;
-  uploadedFile: {
-    id: string;
-    filename: string;
-    file_path: string;
-  } | null;
-}
+import {
+  usePDFStore,
+  useUIStore,
+  useSettingsStore,
+  useUploadStore,
+} from "@/stores";
 
 function UploadContent() {
   const { user } = useAuth();
   const router = useRouter();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Zustand stores
   const {
@@ -59,38 +51,41 @@ function UploadContent() {
   } = useUIStore();
   const { auto_ocr, max_file_size } = useSettingsStore();
 
-  // Local state for this component only
-  const [uploadState, setUploadState] = useState<UploadState>({
-    isUploading: false,
-    progress: 0,
-    error: null,
-    success: false,
-    uploadedFile: null,
-  });
+  // Upload store
+  const {
+    selectedFile,
+    setSelectedFile,
+    isUploading,
+    progress,
+    error,
+    success,
+    uploadedFile,
+    validationErrors,
+    setMaxFileSize,
+    startUpload: startUploadStore,
+    completeUpload: completeUploadStore,
+    failUpload: failUploadStore,
+    resetUploadState,
+  } = useUploadStore();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "application/pdf") {
-      // Check file size against settings
-      const fileSizeMB = file.size / (1024 * 1024);
-      if (fileSizeMB > max_file_size) {
-        showErrorNotification(
-          "File too large",
-          `File size (${fileSizeMB.toFixed(
-            1
-          )}MB) exceeds limit of ${max_file_size}MB`
-        );
+      // Update max file size from settings
+      setMaxFileSize(max_file_size);
+
+      // Set selected file (this will trigger validation)
+      setSelectedFile(file);
+
+      // Check validation errors
+      if (validationErrors.length > 0) {
+        validationErrors.forEach((error) => {
+          showErrorNotification("Validation Error", error);
+        });
         return;
       }
 
-      setSelectedFile(file);
-      setUploadState({
-        isUploading: false,
-        progress: 0,
-        error: null,
-        success: false,
-        uploadedFile: null,
-      });
+      resetUploadState();
     } else {
       showErrorNotification("Invalid file", "Please select a valid PDF file");
       setSelectedFile(null);
@@ -110,27 +105,19 @@ function UploadContent() {
       // Use Zustand store utility for upload with auto-OCR
       const fileId = `upload-${Date.now()}`;
 
-      // Start upload in store
+      // Start upload in stores
       startUpload(fileId, selectedFile.name);
+      startUploadStore(selectedFile);
       setLoading("file-upload", true);
-
-      setUploadState({
-        isUploading: true,
-        progress: 0,
-        error: null,
-        success: false,
-        uploadedFile: null,
-      });
 
       const result = await uploadPDFToSupabase(
         selectedFile,
         user.id,
-        (progress) => {
-          updateUploadProgress(fileId, progress);
-          setUploadState((prev) => ({
-            ...prev,
-            progress,
-          }));
+        (progressValue) => {
+          updateUploadProgress(fileId, progressValue);
+          // Update upload store progress
+          const { updateProgress } = useUploadStore.getState();
+          updateProgress(progressValue);
         }
       );
 
@@ -149,15 +136,8 @@ function UploadContent() {
       // Add to store and complete upload
       addFile(pdfFile);
       completeUpload(fileId, pdfFile);
+      completeUploadStore(result);
       setLoading("file-upload", false);
-
-      setUploadState({
-        isUploading: false,
-        progress: 100,
-        error: null,
-        success: true,
-        uploadedFile: result,
-      });
 
       // Show success notification with auto-OCR info
       if (auto_ocr) {
@@ -192,15 +172,8 @@ function UploadContent() {
         const fileId = `upload-${Date.now()}`;
         failUpload(fileId, errorMessage);
       }
+      failUploadStore(errorMessage);
       setLoading("file-upload", false);
-
-      setUploadState({
-        isUploading: false,
-        progress: 0,
-        error: errorMessage,
-        success: false,
-        uploadedFile: null,
-      });
 
       showErrorNotification("Upload Failed", errorMessage);
     }
@@ -208,13 +181,7 @@ function UploadContent() {
 
   const resetUpload = () => {
     setSelectedFile(null);
-    setUploadState({
-      isUploading: false,
-      progress: 0,
-      error: null,
-      success: false,
-      uploadedFile: null,
-    });
+    resetUploadState();
   };
 
   const formatFileSize = (bytes: number) => {
@@ -238,7 +205,7 @@ function UploadContent() {
           </Typography>
         </Box>
 
-        {uploadState.success ? (
+        {success ? (
           <Card sx={{ backgroundColor: "white", mb: 4 }}>
             <CardContent className="text-center py-12">
               <CheckCircle className="text-6xl text-green-500 mb-4" />
@@ -252,11 +219,11 @@ function UploadContent() {
                 Your PDF file has been uploaded successfully
               </Typography>
 
-              {uploadState.uploadedFile && (
+              {uploadedFile && (
                 <Box className="mb-6">
                   <Chip
                     icon={<Description />}
-                    label={uploadState.uploadedFile.filename}
+                    label={uploadedFile.filename}
                     variant="outlined"
                     className="mb-2"
                     sx={{
@@ -374,19 +341,19 @@ function UploadContent() {
                     </Box>
                   </Box>
 
-                  {uploadState.isUploading && (
+                  {isUploading && (
                     <Box className="mb-4">
                       <Box className="flex justify-between items-center mb-2">
                         <Typography variant="body2" className="text-gray-600">
                           Uploading...
                         </Typography>
                         <Typography variant="body2" className="text-gray-600">
-                          {Math.round(uploadState.progress)}%
+                          {Math.round(progress)}%
                         </Typography>
                       </Box>
                       <LinearProgress
                         variant="determinate"
-                        value={uploadState.progress}
+                        value={progress}
                         className="mb-2"
                       />
                     </Box>
@@ -398,7 +365,7 @@ function UploadContent() {
                     <Button
                       variant="contained"
                       onClick={handleUpload}
-                      disabled={uploadState.isUploading}
+                      disabled={isUploading}
                       startIcon={<CloudUpload />}
                       sx={{
                         backgroundColor: "#dc2626",
@@ -407,12 +374,12 @@ function UploadContent() {
                         },
                       }}
                     >
-                      {uploadState.isUploading ? "Uploading..." : "Upload PDF"}
+                      {isUploading ? "Uploading..." : "Upload PDF"}
                     </Button>
                     <Button
                       variant="outlined"
                       onClick={() => setSelectedFile(null)}
-                      disabled={uploadState.isUploading}
+                      disabled={isUploading}
                       className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     >
                       Cancel
@@ -421,9 +388,9 @@ function UploadContent() {
                 </Box>
               )}
 
-              {uploadState.error && (
+              {error && (
                 <Alert severity="error" className="mt-4" icon={<ErrorIcon />}>
-                  {uploadState.error}
+                  {error}
                 </Alert>
               )}
             </CardContent>

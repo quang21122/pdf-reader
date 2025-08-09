@@ -212,10 +212,11 @@ export async function deletePDFFile(fileId: string, userId: string) {
 }
 
 /**
- * Get PDF file download URL using GraphQL
+ * Get PDF file download URL using GraphQL with Supabase fallback
  */
 export async function getPDFDownloadUrl(filePath: string): Promise<string> {
   try {
+    // Try GraphQL first
     const { data: gqlData } = await apolloClient.mutate({
       mutation: GET_PDF_FILE_URL,
       variables: {
@@ -223,14 +224,70 @@ export async function getPDFDownloadUrl(filePath: string): Promise<string> {
       },
     });
 
-    if (!gqlData?.getPDFFileUrl) {
-      throw new Error("Failed to get download URL");
+    if (gqlData?.getPDFFileUrl) {
+      return gqlData.getPDFFileUrl;
     }
 
-    return gqlData.getPDFFileUrl;
+    // Fallback to direct Supabase client
+    console.warn("GraphQL failed, using Supabase client fallback");
+    return await getPDFDownloadUrlDirect(filePath);
   } catch (error) {
     console.error("GraphQL get download URL error:", error);
-    throw new Error("Failed to get download URL");
+
+    // Fallback to direct Supabase client
+    try {
+      console.warn("Using Supabase client fallback");
+      return await getPDFDownloadUrlDirect(filePath);
+    } catch (fallbackError) {
+      console.error("Supabase fallback also failed:", fallbackError);
+      throw new Error(
+        "Failed to get download URL from both GraphQL and Supabase"
+      );
+    }
+  }
+}
+
+/**
+ * Get PDF file download URL directly from Supabase (fallback method)
+ */
+export async function getPDFDownloadUrlDirect(
+  filePath: string
+): Promise<string> {
+  try {
+    // Clean the file path - remove any leading slashes or bucket name
+    let cleanPath = filePath;
+    if (cleanPath.startsWith("/")) {
+      cleanPath = cleanPath.substring(1);
+    }
+    // Remove bucket name if it's included in the path
+    if (cleanPath.startsWith("pdf-files/")) {
+      cleanPath = cleanPath.substring(10);
+    }
+    if (cleanPath.startsWith("pdf/")) {
+      cleanPath = cleanPath.substring(4);
+    }
+
+    console.log("Getting signed URL for path:", cleanPath);
+
+    // Create signed URL with 1 hour expiry
+    const { data, error } = await supabase.storage
+      .from("pdf")
+      .createSignedUrl(cleanPath, 3600);
+
+    if (error) {
+      console.error("Supabase storage error:", error);
+      throw new Error(`Storage error: ${error.message}`);
+    }
+
+    if (!data?.signedUrl) {
+      throw new Error("No signed URL returned from Supabase");
+    }
+
+    console.log("Successfully created signed URL");
+    return data.signedUrl;
+  } catch (error) {
+    console.error("Direct Supabase URL generation failed:", error);
+    throw error;
   }
 }
 
