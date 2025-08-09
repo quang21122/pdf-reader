@@ -27,6 +27,8 @@ export { useNavigation } from "./useNavigation";
 // PDF hooks
 export { usePDFUrl } from "./usePDFUrl";
 export { usePDFValidation } from "./usePDFValidation";
+export { usePDFTextSelection } from "./usePDFTextSelection";
+export { usePDFDocumentHandlers } from "./usePDFDocumentHandlers";
 
 // App status hooks
 export { useAppStatus } from "./useAppStatus";

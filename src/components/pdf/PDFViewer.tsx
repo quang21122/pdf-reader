@@ -1,9 +1,16 @@
 "use client";
 
-import React, { useCallback, useEffect } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
-import { Box, Typography, CircularProgress, Alert } from "@mui/material";
+import React, { useEffect, useRef } from "react";
+import { pdfjs } from "react-pdf";
+import { Box } from "@mui/material";
 import { usePDFViewerStore } from "@/stores";
+import { usePDFTextSelection, usePDFDocumentHandlers } from "@/hooks";
+import PDFLoadingStates, { PDFEmptyState } from "./PDFLoadingStates";
+import PDFDocument from "./PDFDocument";
+
+// Import CSS for text layer
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -14,6 +21,8 @@ interface PDFViewerProps {
 }
 
 export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
+  const documentRef = useRef<HTMLDivElement>(null);
+
   // Zustand store
   const {
     numPages,
@@ -35,62 +44,22 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
     setFileId(fileId || null);
   }, [fileUrl, fileId, setFileUrl, setFileId]);
 
-  const onDocumentLoadSuccess = useCallback(
-    ({ numPages }: { numPages: number }) => {
-      setNumPages(numPages);
-      setCurrentPage(1);
-      setLoading(false);
-      clearError();
-    },
-    [setNumPages, setCurrentPage, setLoading, clearError]
-  );
+  // Use PDF text selection hook
+  usePDFTextSelection(numPages, scale);
 
-  const onDocumentLoadError = useCallback(
-    (error: Error) => {
-      console.error("PDF load error:", error);
-
-      let errorMessage = "Failed to load PDF document";
-
-      // Provide more specific error messages
-      if (error.message.includes("400")) {
-        errorMessage =
-          "PDF file not found or access denied. Please check if the file exists and you have permission to view it.";
-      } else if (error.message.includes("403")) {
-        errorMessage =
-          "Access denied. You don't have permission to view this file.";
-      } else if (error.message.includes("404")) {
-        errorMessage =
-          "PDF file not found. The file may have been deleted or moved.";
-      } else if (error.message.includes("network")) {
-        errorMessage =
-          "Network error. Please check your internet connection and try again.";
-      } else if (error.message.includes("cors")) {
-        errorMessage =
-          "CORS error. There's an issue with file access permissions.";
-      }
-
-      setError(errorMessage);
-      setLoading(false);
-    },
-    [setError, setLoading]
+  // Use PDF document handlers hook
+  const { onDocumentLoadSuccess, onDocumentLoadError } = usePDFDocumentHandlers(
+    {
+      setNumPages,
+      setCurrentPage,
+      setLoading,
+      setError,
+      clearError,
+    }
   );
 
   if (!fileUrl) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100%",
-          backgroundColor: "#f5f5f5",
-        }}
-      >
-        <Typography variant="h6" color="text.secondary">
-          No PDF file to display
-        </Typography>
-      </Box>
-    );
+    return <PDFEmptyState />;
   }
 
   return (
@@ -112,57 +81,43 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
           alignItems: isLoading ? "center" : "flex-start",
           p: 2,
           pb: 8, // Add bottom padding for bottom toolbar
+          userSelect: "text",
+          pointerEvents: "auto",
         }}
       >
-        {isLoading && (
-          <Box sx={{ textAlign: "center" }}>
-            <CircularProgress />
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              Loading PDF...
-            </Typography>
-          </Box>
-        )}
-
-        {error && (
-          <Alert severity="error" sx={{ maxWidth: 400 }}>
-            {error}
-          </Alert>
-        )}
+        <PDFLoadingStates isLoading={isLoading} error={error} />
 
         {!isLoading && !error && (
-          <Document
-            file={fileUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            loading={
-              <Box sx={{ textAlign: "center" }}>
-                <CircularProgress />
-                <Typography variant="body2" sx={{ mt: 2 }}>
-                  Loading PDF...
-                </Typography>
-              </Box>
-            }
+          <Box
+            ref={documentRef}
+            sx={{
+              // Enable text selection but with control
+              userSelect: "text",
+              pointerEvents: "auto",
+              // Controlled text selection behavior
+              "& .react-pdf__Page__textContent": {
+                userSelect: "text",
+                pointerEvents: "auto",
+                position: "relative",
+                zIndex: 1,
+                "& span": {
+                  userSelect: "text",
+                  pointerEvents: "auto",
+                  display: "inline",
+                  position: "relative",
+                  cursor: "text",
+                },
+              },
+            }}
           >
-            {/* Render all pages */}
-            {Array.from(new Array(numPages), (_, index) => (
-              <Box
-                key={`page_${index + 1}`}
-                id={`page_${index + 1}`}
-                sx={{
-                  mb: 0.5,
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                <Page
-                  pageNumber={index + 1}
-                  scale={scale}
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
-                />
-              </Box>
-            ))}
-          </Document>
+            <PDFDocument
+              fileUrl={fileUrl}
+              numPages={numPages}
+              scale={scale}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+            />
+          </Box>
         )}
       </Box>
     </Box>
