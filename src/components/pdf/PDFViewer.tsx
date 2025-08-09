@@ -1,18 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import {
-  Box,
-  Typography,
-  IconButton,
-  Toolbar,
-  CircularProgress,
-  Alert,
-  TextField,
-  Button,
-} from "@mui/material";
-import { ZoomIn, ZoomOut, KeyboardArrowDown } from "@mui/icons-material";
+import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import { usePDFViewerStore } from "@/stores";
 
 // Set up PDF.js worker
@@ -35,32 +25,15 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
     setLoading,
     setError,
     clearError,
-    zoomIn,
-    zoomOut,
     setFileUrl,
     setFileId,
   } = usePDFViewerStore();
-
-  // Local state for scroll to page
-  const [scrollToPage, setScrollToPage] = useState<string>("");
 
   // Update store when props change
   useEffect(() => {
     setFileUrl(fileUrl || null);
     setFileId(fileId || null);
   }, [fileUrl, fileId, setFileUrl, setFileId]);
-
-  // Function to scroll to specific page
-  const handleScrollToPage = () => {
-    const pageNum = parseInt(scrollToPage);
-    if (pageNum >= 1 && pageNum <= numPages) {
-      const pageElement = document.getElementById(`page_${pageNum}`);
-      if (pageElement) {
-        pageElement.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
-    setScrollToPage("");
-  };
 
   const onDocumentLoadSuccess = useCallback(
     ({ numPages }: { numPages: number }) => {
@@ -129,55 +102,6 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
         backgroundColor: "#f5f5f5",
       }}
     >
-      {/* Controls Toolbar */}
-      <Toolbar
-        sx={{
-          backgroundColor: "white",
-          borderBottom: "1px solid #e0e0e0",
-          minHeight: "48px !important",
-        }}
-      >
-        <Typography variant="body2" sx={{ mr: 2 }}>
-          Total Pages: {numPages}
-        </Typography>
-
-        <TextField
-          size="small"
-          placeholder="Go to page"
-          value={scrollToPage}
-          onChange={(e) => setScrollToPage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleScrollToPage();
-            }
-          }}
-          sx={{ width: 120, mr: 1 }}
-        />
-
-        <Button
-          size="small"
-          onClick={handleScrollToPage}
-          disabled={!scrollToPage}
-          startIcon={<KeyboardArrowDown />}
-        >
-          Go
-        </Button>
-
-        <Box sx={{ flexGrow: 1 }} />
-
-        <IconButton onClick={zoomOut} disabled={scale <= 0.5} size="small">
-          <ZoomOut />
-        </IconButton>
-
-        <Typography variant="body2" sx={{ mx: 1 }}>
-          {Math.round(scale * 100)}%
-        </Typography>
-
-        <IconButton onClick={zoomIn} disabled={scale >= 3.0} size="small">
-          <ZoomIn />
-        </IconButton>
-      </Toolbar>
-
       {/* PDF Content */}
       <Box
         sx={{
@@ -187,6 +111,7 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
           justifyContent: "center",
           alignItems: isLoading ? "center" : "flex-start",
           p: 2,
+          pb: 8, // Add bottom padding for bottom toolbar
         }}
       >
         {isLoading && (

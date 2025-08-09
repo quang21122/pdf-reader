@@ -16,12 +16,26 @@ export function useFileViewerActions() {
     if (!file || !fileUrl) return;
 
     try {
+      // Fetch the file as blob to force download
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = fileUrl;
+      link.href = url;
       link.download = file.filename;
+      link.style.display = "none";
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(url);
 
       showSuccessNotification(
         "Download Started",
