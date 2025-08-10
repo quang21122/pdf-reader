@@ -29,6 +29,8 @@ export { usePDFUrl } from "./usePDFUrl";
 export { usePDFValidation } from "./usePDFValidation";
 export { usePDFTextSelection } from "./usePDFTextSelection";
 export { usePDFDocumentHandlers } from "./usePDFDocumentHandlers";
+export { usePDFSearch } from "./usePDFSearch";
+export { usePDFHighlight } from "./usePDFHighlight";
 
 // App status hooks
 export { useAppStatus } from "./useAppStatus";
@@ -46,6 +48,7 @@ export {
   fileUtils as fileManagementUtils,
 } from "./useFileManagement";
 export { useFileActions } from "./useFileActions";
+export { useFileViewerState } from "./useFileViewerState";
 
 // Home page hooks
 export { useHomeRedirect } from "./useHomeRedirect";
@@ -67,5 +70,6 @@ export type {
   PDFValidationResult,
 } from "./usePDFValidation";
 export type { PDFUrlState, UsePDFUrlOptions } from "./usePDFUrl";
+export type { SearchResult } from "./usePDFSearch";
 export type { NotificationOptions } from "./useNotifications";
 export type { PDFFile } from "./useFileManagement";

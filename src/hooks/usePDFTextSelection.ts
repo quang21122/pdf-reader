@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 
 export const usePDFTextSelection = (numPages: number, scale: number) => {
-  // Enhanced text selection CSS
+  // Simplified text selection enabler
   useEffect(() => {
     const style = document.createElement("style");
     style.id = "pdf-text-selection-enhanced";
     style.textContent = `
-      /* PDF Document Container */
+      /* Enable text selection on PDF pages */
       .react-pdf__Document {
         user-select: text !important;
         -webkit-user-select: text !important;
@@ -14,45 +14,46 @@ export const usePDFTextSelection = (numPages: number, scale: number) => {
         -ms-user-select: text !important;
       }
 
-      /* PDF Page Container */
       .react-pdf__Page {
         position: relative !important;
         user-select: text !important;
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
         -ms-user-select: text !important;
-        margin-bottom: 8px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
       }
 
-      /* Canvas Layer - Make it non-interactive */
+      /* Canvas layer should not interfere with text selection */
       .react-pdf__Page__canvas {
         position: relative !important;
         z-index: 1 !important;
         pointer-events: none !important;
-        display: block !important;
       }
 
-      /* Text Layer - Make it interactive and selectable */
+      /* Text layer - enable text selection with optimizations */
       .react-pdf__Page__textContent {
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        z-index: 10 !important;
+        z-index: 2 !important;
         pointer-events: auto !important;
         user-select: text !important;
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
         -ms-user-select: text !important;
         overflow: hidden !important;
+
+        /* Optimize text layer rendering */
+        will-change: transform !important;
+        transform: translateZ(0) !important;
+        -webkit-transform: translateZ(0) !important;
       }
 
-      /* Text Spans - Individual text elements */
+      /* Text spans - optimized for crisp selection */
       .react-pdf__Page__textContent span {
         position: absolute !important;
-        color: transparent !important;
+        color: rgba(0, 0, 0, 0.01) !important; /* Nearly invisible but not fully transparent */
         cursor: text !important;
         user-select: text !important;
         -webkit-user-select: text !important;
@@ -62,63 +63,107 @@ export const usePDFTextSelection = (numPages: number, scale: number) => {
         white-space: pre !important;
         transform-origin: 0% 0% !important;
         line-height: 1 !important;
-        font-family: sans-serif !important;
-        /* Ensure spans can be selected */
-        -webkit-touch-callout: text !important;
-        -webkit-user-drag: none !important;
-        -khtml-user-select: text !important;
+
+        /* Font rendering optimizations for crisp text */
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
+        font-feature-settings: "kern" 1 !important;
+
+        /* Prevent text distortion during selection */
+        backface-visibility: hidden !important;
+        -webkit-backface-visibility: hidden !important;
+        transform-style: preserve-3d !important;
       }
 
-      /* Selection Highlighting - Make it more visible */
+      /* Clean, crisp selection highlighting */
       .react-pdf__Page__textContent span::selection {
-        background-color: #3f51b5 !important;
-        color: white !important;
-        opacity: 0.7 !important;
+        background-color: #3f51b5 !important; /* Solid blue background */
+        color: #ffffff !important; /* White text for maximum contrast */
+        text-shadow: none !important; /* Remove any text shadows */
       }
 
       .react-pdf__Page__textContent span::-moz-selection {
         background-color: #3f51b5 !important;
-        color: white !important;
-        opacity: 0.7 !important;
+        color: #ffffff !important;
+        text-shadow: none !important;
       }
 
-      /* Alternative selection highlighting for better visibility */
+      /* Alternative selection for better browser compatibility */
       .react-pdf__Page__textContent::selection {
         background-color: #3f51b5 !important;
-        color: white !important;
-        opacity: 0.7 !important;
+        color: #ffffff !important;
+        text-shadow: none !important;
       }
 
       .react-pdf__Page__textContent::-moz-selection {
         background-color: #3f51b5 !important;
-        color: white !important;
-        opacity: 0.7 !important;
+        color: #ffffff !important;
+        text-shadow: none !important;
       }
 
-      /* Annotation Layer - Keep it below text */
+      /* Annotation layer - keep above text but allow text selection underneath */
       .react-pdf__Page__annotations {
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        z-index: 5 !important;
-        pointer-events: none !important;
+        z-index: 10 !important;
+        pointer-events: none !important; /* Allow text selection through */
+      }
+
+      /* Only enable pointer events on actual annotations */
+      .react-pdf__Page__annotations .linkAnnotation {
+        pointer-events: auto !important;
+      }
+
+      .react-pdf__Page__annotations .linkAnnotation > a {
+        display: block !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        text-decoration: none !important;
+        background-color: transparent !important;
+        background: transparent !important;
+      }
+
+      /* Remove hover background for links - force transparent background */
+      .react-pdf__Page__annotations .linkAnnotation > a:hover,
+      .react-pdf__Page__annotations .linkAnnotation > a:focus,
+      .react-pdf__Page__annotations .linkAnnotation > a:active {
+        background-color: transparent !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+
+      /* Also target the linkAnnotation container itself */
+      .react-pdf__Page__annotations .linkAnnotation {
+        background-color: transparent !important;
+        background: transparent !important;
+      }
+
+      .react-pdf__Page__annotations .linkAnnotation:hover {
+        background-color: transparent !important;
+        background: transparent !important;
+      }
+
+      /* Zoom-level optimizations for crisp text at all scales */
+      .react-pdf__Page[data-scale] .react-pdf__Page__textContent span {
+        image-rendering: -webkit-optimize-contrast !important;
+        image-rendering: crisp-edges !important;
+        image-rendering: pixelated !important;
+      }
+
+      /* High DPI display optimizations */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .react-pdf__Page__textContent span {
+          -webkit-font-smoothing: subpixel-antialiased !important;
+        }
       }
     `;
 
     document.head.appendChild(style);
-
-    // Enable text selection globally
-    document.onselectstart = null;
-    document.onmousedown = null;
-
-    // Remove any selection prevention from body
-    const bodyStyle = document.body.style as any;
-    bodyStyle.userSelect = "text";
-    bodyStyle.webkitUserSelect = "text";
-    bodyStyle.mozUserSelect = "text";
-    bodyStyle.msUserSelect = "text";
 
     return () => {
       const existingStyle = document.getElementById(
@@ -128,66 +173,41 @@ export const usePDFTextSelection = (numPages: number, scale: number) => {
         document.head.removeChild(existingStyle);
       }
     };
-  }, []);
+  }, [numPages]);
 
-  // Enhanced text selection enabler after pages load
+  // Enhanced text layer enabler for crisp rendering
   useEffect(() => {
     if (numPages > 0) {
       const enableTextSelection = () => {
-        // Wait for pages to render
         setTimeout(() => {
           const pages = document.querySelectorAll(".react-pdf__Page");
-          pages.forEach((page, pageIndex) => {
+          pages.forEach((page) => {
             const textContent = page.querySelector(
               ".react-pdf__Page__textContent"
             );
-            const canvas = page.querySelector(".react-pdf__Page__canvas");
 
             if (textContent) {
               const textElement = textContent as HTMLElement;
 
-              // Force enable text selection on text layer - preserve PDF.js positioning
-              const textStyle = textElement.style as any;
-              textStyle.display = "block"; // Override display: none
-              textStyle.zIndex = "999";
-              textStyle.pointerEvents = "auto";
-              textStyle.userSelect = "text";
-              textStyle.webkitUserSelect = "text";
-              textStyle.mozUserSelect = "text";
-              textStyle.msUserSelect = "text";
-              textStyle.webkitTouchCallout = "default";
-              textStyle.webkitUserDrag = "none";
-              textStyle.khtmlUserSelect = "text";
+              // Ensure text layer is visible and selectable
+              textElement.style.display = "block";
+              textElement.style.pointerEvents = "auto";
+              textElement.style.userSelect = "text";
 
-              // Enable selection on text spans - preserve PDF.js positioning and transforms
+              // Apply crisp rendering optimizations
+              (textElement.style as any).webkitFontSmoothing = "antialiased";
+              (textElement.style as any).mozOsxFontSmoothing = "grayscale";
+              textElement.style.textRendering = "optimizeLegibility";
+
+              // Optimize text spans for better selection
               const spans = textElement.querySelectorAll("span");
-              spans.forEach((span, spanIndex) => {
+              spans.forEach((span) => {
                 const spanElement = span as HTMLElement;
-                const spanStyle = spanElement.style as any;
-
-                // Only modify selection-related styles, preserve positioning
-                spanStyle.color = "rgba(0,0,0,0.01)";
-                spanStyle.cursor = "text";
-                spanStyle.userSelect = "text";
-                spanStyle.webkitUserSelect = "text";
-                spanStyle.mozUserSelect = "text";
-                spanStyle.msUserSelect = "text";
-                spanStyle.pointerEvents = "auto";
-                spanStyle.webkitTouchCallout = "default";
-                spanStyle.webkitUserDrag = "none";
-                spanStyle.khtmlUserSelect = "text";
-                spanStyle.zIndex = "1000";
-
-                // Add data attributes for debugging
-                spanElement.setAttribute("data-page", pageIndex.toString());
-                spanElement.setAttribute("data-span", spanIndex.toString());
+                (spanElement.style as any).webkitFontSmoothing = "antialiased";
+                (spanElement.style as any).mozOsxFontSmoothing = "grayscale";
+                spanElement.style.textRendering = "optimizeLegibility";
+                (spanElement.style as any).backfaceVisibility = "hidden";
               });
-            }
-
-            if (canvas) {
-              const canvasElement = canvas as HTMLElement;
-              canvasElement.style.pointerEvents = "none";
-              canvasElement.style.zIndex = "1";
             }
           });
         }, 100);
@@ -195,10 +215,10 @@ export const usePDFTextSelection = (numPages: number, scale: number) => {
 
       enableTextSelection();
 
-      // Re-enable after scale changes and periodically
-      const interval = setInterval(enableTextSelection, 1000);
+      // Re-enable after scale changes with longer delay for zoom operations
+      const timeout = setTimeout(enableTextSelection, 800);
 
-      return () => clearInterval(interval);
+      return () => clearTimeout(timeout);
     }
   }, [numPages, scale]);
 };

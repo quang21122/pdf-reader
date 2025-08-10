@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Box,
@@ -60,7 +60,7 @@ function TrashContent() {
   });
 
   // Load deleted files
-  const loadDeletedFiles = async () => {
+  const loadDeletedFiles = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -81,11 +81,11 @@ function TrashContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, notifications]);
 
   useEffect(() => {
     loadDeletedFiles();
-  }, [user]);
+  }, [user, loadDeletedFiles]);
 
   // Handle restore file
   const handleRestore = async (file: DeletedPDFFile) => {

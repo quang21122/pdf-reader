@@ -11,29 +11,36 @@ import {
 
 interface FileViewerBottomToolbarProps {
   numPages: number;
+  currentPage: number;
   scale: number;
+  viewMode: "single" | "continuous";
   onZoomIn: () => void;
   onZoomOut: () => void;
   onScrollToPage: (pageNumber: number) => void;
+  onPageChange: (pageNumber: number) => void;
 }
 
 export default function FileViewerBottomToolbar({
   numPages,
+  currentPage,
   scale,
+  viewMode,
   onZoomIn,
   onZoomOut,
   onScrollToPage,
+  onPageChange,
 }: FileViewerBottomToolbarProps) {
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageInput, setPageInput] = useState<string>("1");
+  const [pageInput, setPageInput] = useState<string>(currentPage.toString());
 
   // Update page input when current page changes
   useEffect(() => {
     setPageInput(currentPage.toString());
   }, [currentPage]);
 
-  // Detect current visible page using Intersection Observer
+  // Detect current visible page using Intersection Observer (only in continuous mode)
   useEffect(() => {
+    if (viewMode !== "continuous") return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         // Find the page that's most visible
@@ -56,7 +63,7 @@ export default function FileViewerBottomToolbar({
 
         if (maxVisibleRatio > 0.3) {
           // Only update if at least 30% of page is visible
-          setCurrentPage(mostVisiblePage);
+          onPageChange(mostVisiblePage);
         }
       },
       {
@@ -82,7 +89,7 @@ export default function FileViewerBottomToolbar({
       observer.disconnect();
       clearInterval(checkInterval);
     };
-  }, []); // Remove numPages dependency to keep array size constant
+  }, [viewMode, onPageChange]);
 
   const handlePageInputChange = (value: string) => {
     setPageInput(value);
@@ -91,37 +98,47 @@ export default function FileViewerBottomToolbar({
   const handlePageInputSubmit = () => {
     const pageNum = parseInt(pageInput);
     if (pageNum >= 1 && pageNum <= numPages) {
-      setCurrentPage(pageNum);
-      onScrollToPage(pageNum);
+      onPageChange(pageNum);
+      if (viewMode === "continuous") {
+        onScrollToPage(pageNum);
+      }
     } else {
       setPageInput(currentPage.toString());
     }
   };
 
   const goToFirstPage = () => {
-    setCurrentPage(1);
-    onScrollToPage(1);
+    onPageChange(1);
+    if (viewMode === "continuous") {
+      onScrollToPage(1);
+    }
   };
 
   const goToPrevPage = () => {
     if (currentPage > 1) {
       const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      onScrollToPage(newPage);
+      onPageChange(newPage);
+      if (viewMode === "continuous") {
+        onScrollToPage(newPage);
+      }
     }
   };
 
   const goToNextPage = () => {
     if (currentPage < numPages) {
       const newPage = currentPage + 1;
-      setCurrentPage(newPage);
-      onScrollToPage(newPage);
+      onPageChange(newPage);
+      if (viewMode === "continuous") {
+        onScrollToPage(newPage);
+      }
     }
   };
 
   const goToLastPage = () => {
-    setCurrentPage(numPages);
-    onScrollToPage(numPages);
+    onPageChange(numPages);
+    if (viewMode === "continuous") {
+      onScrollToPage(numPages);
+    }
   };
 
   return (

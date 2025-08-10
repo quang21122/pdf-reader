@@ -6,6 +6,9 @@ interface PDFDocumentProps {
   fileUrl: string;
   numPages: number;
   scale: number;
+  rotation?: number;
+  viewMode?: "single" | "continuous";
+  currentPage?: number;
   onLoadSuccess: ({ numPages }: { numPages: number }) => void;
   onLoadError: (error: Error) => void;
 }
@@ -14,6 +17,9 @@ export default function PDFDocument({
   fileUrl,
   numPages,
   scale,
+  rotation = 0,
+  viewMode = "continuous",
+  currentPage = 1,
   onLoadSuccess,
   onLoadError,
 }: PDFDocumentProps) {
@@ -31,27 +37,53 @@ export default function PDFDocument({
         </Box>
       }
     >
-      {/* Render all pages */}
-      {Array.from(new Array(numPages), (_, index) => (
+      {/* Render pages based on view mode */}
+      {viewMode === "single" ? (
+        // Single page view - only show current page
         <Box
-          key={`page_${index + 1}`}
-          id={`page_${index + 1}`}
+          key={`page_${currentPage}`}
+          id={`page_${currentPage}`}
           sx={{
-            mb: 1,
             display: "flex",
             justifyContent: "center",
             userSelect: "text",
             pointerEvents: "auto",
+            position: "relative", // Ensure proper positioning for annotations
           }}
         >
           <Page
-            pageNumber={index + 1}
+            pageNumber={currentPage}
             scale={scale}
+            rotate={rotation}
             renderTextLayer={true}
-            renderAnnotationLayer={false}
+            renderAnnotationLayer={true}
           />
         </Box>
-      ))}
+      ) : (
+        // Continuous view - show all pages
+        Array.from(new Array(numPages), (_, index) => (
+          <Box
+            key={`page_${index + 1}`}
+            id={`page_${index + 1}`}
+            sx={{
+              mb: 1,
+              display: "flex",
+              justifyContent: "center",
+              userSelect: "text",
+              pointerEvents: "auto",
+              position: "relative", // Ensure proper positioning for annotations
+            }}
+          >
+            <Page
+              pageNumber={index + 1}
+              scale={scale}
+              rotate={rotation}
+              renderTextLayer={true}
+              renderAnnotationLayer={true}
+            />
+          </Box>
+        ))
+      )}
     </Document>
   );
 }

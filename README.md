@@ -5,21 +5,25 @@ A modern PDF reader application built with Next.js, featuring OCR capabilities, 
 ## 🚀 Features
 
 - **PDF Viewing**: Smooth PDF rendering with zoom and navigation controls
+- **Advanced Search**: Real-time search in PDF content with text highlighting
 - **OCR Technology**: Extract text from scanned PDFs using Tesseract.js
-- **Smart Search**: Search through PDF content and OCR results
-- **Notes & Highlights**: Add personal notes and highlight important text
+- **Smart Navigation**: Page thumbnails, bookmarks, and smooth scrolling
+- **Drawing Tools**: Text selection and drawing modes
 - **User Authentication**: Secure login with Supabase Auth
+- **File Management**: Upload, organize, and manage PDF files
 - **Responsive Design**: Works on desktop and mobile devices
-- **Dark Mode**: Automatic dark/light theme switching.
+- **State Management**: Zustand for efficient state handling
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **UI Framework**: Material UI + Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, Storage)
-- **GraphQL**: Apollo Client (ready for Hasura/Postgraphile)
-- **OCR**: Tesseract.js
-- **PDF Processing**: PDF.js, react-pdf
+- **GraphQL**: Apollo Client with GraphQL queries/mutations
+- **State Management**: Zustand for global state
+- **OCR**: Tesseract.js for text extraction
+- **PDF Processing**: PDF.js, react-pdf for rendering
+- **File Upload**: Multipart upload with progress tracking
 
 ## 📋 Prerequisites
 

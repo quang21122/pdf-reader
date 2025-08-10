@@ -26,7 +26,10 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
   // Zustand store
   const {
     numPages,
+    currentPage,
     scale,
+    rotation,
+    viewMode,
     isLoading,
     error,
     setNumPages,
@@ -91,29 +94,18 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
           <Box
             ref={documentRef}
             sx={{
-              // Enable text selection but with control
+              // Enable text selection
               userSelect: "text",
               pointerEvents: "auto",
-              // Controlled text selection behavior
-              "& .react-pdf__Page__textContent": {
-                userSelect: "text",
-                pointerEvents: "auto",
-                position: "relative",
-                zIndex: 1,
-                "& span": {
-                  userSelect: "text",
-                  pointerEvents: "auto",
-                  display: "inline",
-                  position: "relative",
-                  cursor: "text",
-                },
-              },
             }}
           >
             <PDFDocument
               fileUrl={fileUrl}
               numPages={numPages}
+              currentPage={currentPage}
               scale={scale}
+              rotation={rotation}
+              viewMode={viewMode}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
             />
