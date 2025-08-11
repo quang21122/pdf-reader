@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Box } from "@mui/material";
 import AuthGuard from "@/components/auth/AuthGuard";
@@ -25,7 +25,6 @@ function FileViewerContent() {
   const params = useParams();
   const fileId = params.id as string;
 
-  // Custom hooks
   const { file, fileUrl, isLoading, error } = useFileViewer(fileId);
   const { handleDownload, handleOCR, handleBack } = useFileViewerActions();
   const {
@@ -41,8 +40,6 @@ function FileViewerContent() {
     handleSettingsClose,
     handleBookmark,
   } = useFileViewerState();
-
-  // PDF viewer store for toolbar and bottom toolbar
   const {
     numPages,
     currentPage,
@@ -52,6 +49,9 @@ function FileViewerContent() {
     isFullscreen,
     showThumbnails,
     showBookmarks,
+    isHighlightMode,
+    isTextAnnotationMode,
+    hasUnsavedChanges,
     zoomIn,
     zoomOut,
     setViewMode,
@@ -60,13 +60,18 @@ function FileViewerContent() {
     setCurrentPage,
     toggleFullscreen,
     toggleDrawMode,
-    toggleTextSelectMode,
+    toggleTextAnnotationMode,
+    toggleHighlightMode,
+    saveAnnotations,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
     toggleThumbnails,
     toggleBookmarks,
     rotateClockwise,
   } = usePDFViewerStore();
 
-  // Handle scroll to page
   const handleScrollToPage = (pageNumber: number) => {
     const pageElement = document.getElementById(`page_${pageNumber}`);
     if (pageElement) {
@@ -74,7 +79,41 @@ function FileViewerContent() {
     }
   };
 
-  // Toolbar handlers
+  const handleSave = useCallback(async () => {
+    try {
+      await saveAnnotations();
+    } catch (error) {
+      console.error("Failed to save annotations:", error);
+      alert("Failed to save PDF. Please try again.");
+    }
+  }, [saveAnnotations]);
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === "s") {
+        event.preventDefault();
+        if (hasUnsavedChanges) {
+          handleSave();
+        }
+      }
+
+      if (event.ctrlKey && !event.shiftKey && event.key === "z") {
+        event.preventDefault();
+        if (canUndo()) {
+          undo();
+        }
+      }
+
+      if (event.ctrlKey && event.shiftKey && event.key === "Z") {
+        event.preventDefault();
+        if (canRedo()) {
+          redo();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [hasUnsavedChanges, handleSave, undo, redo, canUndo, canRedo]);
   const handleMenuClick = () => {
     handleSidebarToggle();
   };
@@ -87,11 +126,6 @@ function FileViewerContent() {
     handleSidebarClose();
   };
 
-  const handleAskCopilot = () => {
-    // Open AI assistant
-    console.log("Ask Copilot clicked");
-  };
-
   const handleClose = () => {
     handleBack();
   };
@@ -100,37 +134,40 @@ function FileViewerContent() {
     console.log("Search result:", result);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleHighlightToggle = () => {
+    toggleHighlightMode();
   };
 
-  // Loading state
   if (isLoading) {
     return <FileViewerLoading />;
   }
 
-  // Error state
   if (error) {
     return <FileViewerError error={error} onBack={handleBack} />;
   }
-
-  // Main content
   return (
     <Box sx={{ backgroundColor: "white", minHeight: "100vh" }}>
       <PDFToolbar
         filename={file?.filename}
         isFullscreen={isFullscreen}
         viewMode={viewMode}
+        isHighlightMode={isHighlightMode}
+        isTextAnnotationMode={isTextAnnotationMode}
+        hasUnsavedChanges={hasUnsavedChanges}
+        canUndo={canUndo()}
+        canRedo={canRedo()}
         onMenuClick={handleMenuClick}
+        onSave={handleSave}
+        onUndo={undo}
+        onRedo={redo}
         onViewModeChange={setViewMode}
         onDrawToggle={toggleDrawMode}
-        onTextSelect={toggleTextSelectMode}
+        onTextAnnotationToggle={toggleTextAnnotationMode}
+        onHighlightToggle={handleHighlightToggle}
         onRotate={rotateClockwise}
-        onAskCopilot={handleAskCopilot}
         onFullscreenToggle={toggleFullscreen}
         onClose={handleClose}
         onSearch={handleSearchOpen}
-        onPrint={handlePrint}
         onDownload={() => file && fileUrl && handleDownload(file, fileUrl)}
         onOCR={() => file && handleOCR(file)}
         onSettings={handleSettingsOpen}
@@ -141,7 +178,6 @@ function FileViewerContent() {
         <PDFViewer fileUrl={fileUrl} fileId={fileId} />
       </Box>
 
-      {/* Bottom Toolbar */}
       <FileViewerBottomToolbar
         numPages={numPages}
         currentPage={currentPage}
@@ -153,7 +189,6 @@ function FileViewerContent() {
         onPageChange={setCurrentPage}
       />
 
-      {/* PDF Sidebar */}
       <PDFSidebar
         open={sidebarOpen}
         onClose={handleSidebarClose}
@@ -163,7 +198,6 @@ function FileViewerContent() {
         onPageClick={handleSidebarPageClick}
       />
 
-      {/* PDF Search Dropdown */}
       <PDFSearchDropdown
         open={searchDropdownOpen}
         anchorEl={searchAnchorEl}
@@ -172,7 +206,6 @@ function FileViewerContent() {
         onGoToPage={setCurrentPage}
       />
 
-      {/* PDF Settings Dialog */}
       <PDFSettingsDialog
         open={settingsDialogOpen}
         onClose={handleSettingsClose}

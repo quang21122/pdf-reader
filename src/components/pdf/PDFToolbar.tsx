@@ -21,35 +21,44 @@ import {
   ViewColumn,
   ViewStream,
   Draw,
-  TextFields,
   RotateRight,
-  SmartToy,
   Fullscreen,
   FullscreenExit,
   Close,
   Search,
-  Print,
   Download,
   Settings,
   Bookmark,
   MoreVert,
   AutoFixHigh,
+  Highlight,
+  TextFormat,
+  Save,
+  Undo,
+  Redo,
 } from "@mui/icons-material";
 
 interface PDFToolbarProps {
   filename?: string;
   isFullscreen?: boolean;
   viewMode?: "single" | "continuous";
+  isHighlightMode?: boolean;
+  isTextAnnotationMode?: boolean;
+  hasUnsavedChanges?: boolean;
+  canUndo?: boolean;
+  canRedo?: boolean;
   onMenuClick?: () => void;
+  onSave?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
   onViewModeChange?: (mode: "single" | "continuous") => void;
   onDrawToggle?: () => void;
-  onTextSelect?: () => void;
+  onTextAnnotationToggle?: () => void;
+  onHighlightToggle?: () => void;
   onRotate?: () => void;
-  onAskCopilot?: () => void;
   onFullscreenToggle?: () => void;
   onClose?: () => void;
   onSearch?: (event: React.MouseEvent<HTMLElement>) => void;
-  onPrint?: () => void;
   onDownload?: () => void;
   onOCR?: () => void;
   onSettings?: () => void;
@@ -60,16 +69,23 @@ export default function PDFToolbar({
   filename = "Untitled Document",
   isFullscreen = false,
   viewMode = "continuous",
+  isHighlightMode = false,
+  isTextAnnotationMode = false,
+  hasUnsavedChanges = false,
+  canUndo = false,
+  canRedo = false,
   onMenuClick,
+  onSave,
+  onUndo,
+  onRedo,
   onViewModeChange,
   onDrawToggle,
-  onTextSelect,
+  onTextAnnotationToggle,
+  onHighlightToggle,
   onRotate,
-  onAskCopilot,
   onFullscreenToggle,
   onClose,
   onSearch,
-  onPrint,
   onDownload,
   onOCR,
   onSettings,
@@ -184,13 +200,107 @@ export default function PDFToolbar({
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Text Selection">
+          <Tooltip title="Add Text Annotation">
             <IconButton
-              onClick={onTextSelect}
+              onClick={onTextAnnotationToggle}
               size="small"
-              sx={{ color: "#424242", p: 0.5 }}
+              sx={{
+                color: isTextAnnotationMode ? "#fff" : "#424242",
+                backgroundColor: isTextAnnotationMode
+                  ? "#2196f3"
+                  : "transparent",
+                p: 0.5,
+                "&:hover": {
+                  backgroundColor: isTextAnnotationMode ? "#1976d2" : "#f5f5f5",
+                },
+              }}
             >
-              <TextFields fontSize="small" />
+              <TextFormat fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Highlight Text">
+            <IconButton
+              onClick={onHighlightToggle}
+              size="small"
+              sx={{
+                color: isHighlightMode ? "#fff" : "#424242",
+                backgroundColor: isHighlightMode ? "#ff9800" : "transparent",
+                p: 0.5,
+                "&:hover": {
+                  backgroundColor: isHighlightMode ? "#f57c00" : "#f5f5f5",
+                },
+              }}
+            >
+              <Highlight fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip
+            title={
+              hasUnsavedChanges
+                ? "Save PDF with Annotations (Ctrl+S)"
+                : "No Changes to Save"
+            }
+          >
+            <IconButton
+              onClick={onSave}
+              size="small"
+              disabled={!hasUnsavedChanges}
+              sx={{
+                color: hasUnsavedChanges ? "#fff" : "#9e9e9e",
+                backgroundColor: hasUnsavedChanges ? "#4caf50" : "transparent",
+                p: 0.5,
+                "&:hover": {
+                  backgroundColor: hasUnsavedChanges ? "#388e3c" : "#f5f5f5",
+                },
+                "&:disabled": {
+                  color: "#9e9e9e",
+                  backgroundColor: "transparent",
+                },
+              }}
+            >
+              <Save fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Undo (Ctrl+Z)">
+            <IconButton
+              onClick={onUndo}
+              size="small"
+              disabled={!canUndo}
+              sx={{
+                color: canUndo ? "#424242" : "#9e9e9e",
+                p: 0.5,
+                "&:hover": {
+                  backgroundColor: canUndo ? "#f5f5f5" : "transparent",
+                },
+                "&:disabled": {
+                  color: "#9e9e9e",
+                },
+              }}
+            >
+              <Undo fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Redo (Ctrl+Shift+Z)">
+            <IconButton
+              onClick={onRedo}
+              size="small"
+              disabled={!canRedo}
+              sx={{
+                color: canRedo ? "#424242" : "#9e9e9e",
+                p: 0.5,
+                "&:hover": {
+                  backgroundColor: canRedo ? "#f5f5f5" : "transparent",
+                },
+                "&:disabled": {
+                  color: "#9e9e9e",
+                },
+              }}
+            >
+              <Redo fontSize="small" />
             </IconButton>
           </Tooltip>
 
@@ -232,23 +342,6 @@ export default function PDFToolbar({
 
         {/* Right Section - Actions and Window Controls */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          {/* AI Assistant */}
-          <Tooltip title="Ask Copilot">
-            <IconButton
-              onClick={onAskCopilot}
-              size="small"
-              sx={{ color: "#424242", p: 0.5 }}
-            >
-              <SmartToy fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{ mx: 0.5, backgroundColor: "#e0e0e0" }}
-          />
-
           {/* Search */}
           <Tooltip title="Search">
             <IconButton
@@ -292,17 +385,6 @@ export default function PDFToolbar({
               },
             }}
           >
-            <MenuItem
-              onClick={() => {
-                onPrint?.();
-                handleMoreMenuClose();
-              }}
-            >
-              <ListItemIcon>
-                <Print fontSize="small" sx={{ color: "#424242" }} />
-              </ListItemIcon>
-              <ListItemText>Print</ListItemText>
-            </MenuItem>
             <MenuItem
               onClick={() => {
                 onDownload?.();

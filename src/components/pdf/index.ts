@@ -6,6 +6,7 @@ export { default as PDFThumbnail } from "./PDFThumbnail";
 export { default as PDFSearchDropdown } from "./PDFSearchDropdown";
 export { default as PDFSettingsDialog } from "./PDFSettingsDialog";
 export { default as PDFDocument } from "./PDFDocument";
+export { default as PDFHighlightOverlay } from "./PDFHighlightOverlay";
 export {
   default as PDFLoadingStates,
   PDFEmptyState,

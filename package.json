@@ -33,6 +33,7 @@
     "graphql-tag": "^2.12.6",
     "graphql-upload-minimal": "^1.6.1",
     "next": "15.3.5",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.3.31",
     "postcss": "^8.5.6",
     "react": "^19.0.0",

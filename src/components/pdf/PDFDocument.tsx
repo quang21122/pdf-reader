@@ -1,6 +1,8 @@
 import React from "react";
 import { Document, Page } from "react-pdf";
 import { Box, Typography, CircularProgress } from "@mui/material";
+import PDFHighlightOverlay from "./PDFHighlightOverlay";
+import PDFTextAnnotationOverlay from "./PDFTextAnnotationOverlay";
 
 interface PDFDocumentProps {
   fileUrl: string;
@@ -51,13 +53,17 @@ export default function PDFDocument({
             position: "relative", // Ensure proper positioning for annotations
           }}
         >
-          <Page
-            pageNumber={currentPage}
-            scale={scale}
-            rotate={rotation}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-          />
+          <Box sx={{ position: "relative", display: "inline-block" }}>
+            <Page
+              pageNumber={currentPage}
+              scale={scale}
+              rotate={rotation}
+              renderTextLayer={true}
+              renderAnnotationLayer={true}
+            />
+            <PDFHighlightOverlay pageNumber={currentPage} />
+            <PDFTextAnnotationOverlay pageNumber={currentPage} />
+          </Box>
         </Box>
       ) : (
         // Continuous view - show all pages
@@ -74,13 +80,17 @@ export default function PDFDocument({
               position: "relative", // Ensure proper positioning for annotations
             }}
           >
-            <Page
-              pageNumber={index + 1}
-              scale={scale}
-              rotate={rotation}
-              renderTextLayer={true}
-              renderAnnotationLayer={true}
-            />
+            <Box sx={{ position: "relative", display: "inline-block" }}>
+              <Page
+                pageNumber={index + 1}
+                scale={scale}
+                rotate={rotation}
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+              />
+              <PDFHighlightOverlay pageNumber={index + 1} />
+              <PDFTextAnnotationOverlay pageNumber={index + 1} />
+            </Box>
           </Box>
         ))
       )}
