@@ -30,6 +30,25 @@ interface TextAnnotationData {
   createdAt: Date;
 }
 
+interface DrawingData {
+  id: string;
+  pageNumber: number;
+  paths: {
+    x: number;
+    y: number;
+  }[][];
+  color: string;
+  strokeWidth: number;
+  createdAt: Date;
+}
+
+interface BookmarkData {
+  id: string;
+  pageNumber: number;
+  title: string;
+  createdAt: Date;
+}
+
 interface PDFViewerState {
   // Current file being viewed
   currentFile: PDFFile | null;
@@ -55,20 +74,33 @@ interface PDFViewerState {
 
   // Tools state
   isDrawMode: boolean;
+  isEraseMode: boolean;
   isTextAnnotationMode: boolean;
   isHighlightMode: boolean;
+
+  // Drawing settings
+  drawColor: string;
+  drawStrokeWidth: number;
 
   // Highlight state
   highlights: HighlightData[];
 
   // Text annotations state
   textAnnotations: TextAnnotationData[];
+
+  // Drawing state
+  drawings: DrawingData[];
+
+  // Bookmarks state
+  bookmarks: BookmarkData[];
+
   hasUnsavedChanges: boolean;
 
   // Undo/Redo state
   undoRedoHistory: {
     highlights: HighlightData[];
     textAnnotations: TextAnnotationData[];
+    drawings: DrawingData[];
   }[];
   undoRedoIndex: number;
   maxHistorySize: number;
@@ -127,6 +159,10 @@ interface PDFViewerActions {
   // Tools
   setDrawMode: (enabled: boolean) => void;
   toggleDrawMode: () => void;
+  setEraseMode: (enabled: boolean) => void;
+  toggleEraseMode: () => void;
+  setDrawColor: (color: string) => void;
+  setDrawStrokeWidth: (width: number) => void;
   setTextAnnotationMode: (enabled: boolean) => void;
   toggleTextAnnotationMode: () => void;
   setHighlightMode: (enabled: boolean) => void;
@@ -149,6 +185,22 @@ interface PDFViewerActions {
   ) => void;
   clearTextAnnotations: () => void;
   getTextAnnotationsForPage: (pageNumber: number) => TextAnnotationData[];
+
+  // Drawings
+  addDrawing: (drawing: Omit<DrawingData, "id" | "createdAt">) => void;
+  removeDrawing: (id: string) => void;
+  clearDrawings: () => void;
+  getDrawingsForPage: (pageNumber: number) => DrawingData[];
+
+  // Bookmarks
+  addBookmark: (bookmark: Omit<BookmarkData, "id" | "createdAt">) => void;
+  removeBookmark: (id: string) => void;
+  updateBookmark: (
+    id: string,
+    updates: Partial<Omit<BookmarkData, "id" | "createdAt">>
+  ) => void;
+  clearBookmarks: () => void;
+  getBookmarks: () => BookmarkData[];
 
   // Save functionality
   saveAnnotations: () => Promise<void>;
@@ -199,12 +251,17 @@ const initialState: PDFViewerState = {
   showBookmarks: false,
   isFullscreen: false,
   isDrawMode: false,
+  isEraseMode: false,
   isTextAnnotationMode: false,
   isHighlightMode: false,
+  drawColor: "#ff0000",
+  drawStrokeWidth: 2,
   highlights: [],
   textAnnotations: [],
+  drawings: [],
+  bookmarks: [],
   hasUnsavedChanges: false,
-  undoRedoHistory: [{ highlights: [], textAnnotations: [] }],
+  undoRedoHistory: [{ highlights: [], textAnnotations: [], drawings: [] }],
   undoRedoIndex: 0,
   maxHistorySize: 50,
   searchQuery: "",
@@ -357,6 +414,11 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
         setDrawMode: (enabled) => set({ isDrawMode: enabled }),
         toggleDrawMode: () =>
           set((state) => ({ isDrawMode: !state.isDrawMode })),
+        setEraseMode: (enabled) => set({ isEraseMode: enabled }),
+        toggleEraseMode: () =>
+          set((state) => ({ isEraseMode: !state.isEraseMode })),
+        setDrawColor: (color) => set({ drawColor: color }),
+        setDrawStrokeWidth: (width) => set({ drawStrokeWidth: width }),
         setTextAnnotationMode: (enabled) =>
           set({ isTextAnnotationMode: enabled }),
         toggleTextAnnotationMode: () =>
@@ -452,10 +514,86 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
           return textAnnotations.filter((a) => a.pageNumber === pageNumber);
         },
 
+        // Drawings
+        addDrawing: (drawing) => {
+          // Save current state to history before making changes
+          get().saveToHistory();
+
+          const newDrawing: DrawingData = {
+            ...drawing,
+            id: `drawing_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 11)}`,
+            createdAt: new Date(),
+          };
+          set((state) => ({
+            drawings: [...state.drawings, newDrawing],
+            hasUnsavedChanges: true,
+          }));
+        },
+        removeDrawing: (id) => {
+          // Save current state to history before making changes
+          get().saveToHistory();
+
+          set((state) => ({
+            drawings: state.drawings.filter((d) => d.id !== id),
+            hasUnsavedChanges: true,
+          }));
+        },
+        clearDrawings: () => {
+          // Save current state to history before making changes
+          get().saveToHistory();
+
+          set({ drawings: [], hasUnsavedChanges: true });
+        },
+        getDrawingsForPage: (pageNumber) => {
+          const { drawings } = get();
+          return drawings.filter((d) => d.pageNumber === pageNumber);
+        },
+
+        // Bookmarks
+        addBookmark: (bookmark) => {
+          const newBookmark: BookmarkData = {
+            ...bookmark,
+            id: `bookmark_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 11)}`,
+            createdAt: new Date(),
+          };
+          set((state) => ({
+            bookmarks: [...state.bookmarks, newBookmark],
+          }));
+        },
+        removeBookmark: (id) => {
+          set((state) => ({
+            bookmarks: state.bookmarks.filter((b) => b.id !== id),
+          }));
+        },
+        updateBookmark: (id, updates) => {
+          set((state) => ({
+            bookmarks: state.bookmarks.map((b) =>
+              b.id === id ? { ...b, ...updates } : b
+            ),
+          }));
+        },
+        clearBookmarks: () => {
+          set({ bookmarks: [] });
+        },
+        getBookmarks: () => {
+          const { bookmarks } = get();
+          return bookmarks.sort((a, b) => a.pageNumber - b.pageNumber);
+        },
+
         // Save functionality
         saveAnnotations: async () => {
-          const { fileId, fileUrl, textAnnotations, highlights, currentFile } =
-            get();
+          const {
+            fileId,
+            fileUrl,
+            textAnnotations,
+            highlights,
+            drawings,
+            currentFile,
+          } = get();
           if (!fileId || !fileUrl) {
             console.warn("No file ID or URL available for saving");
             return;
@@ -474,37 +612,51 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
               fileUrl,
               textAnnotations,
               highlights,
+              drawings,
               fileId,
               currentFile?.filename || "document.pdf"
             );
 
             console.log("Save result:", result);
 
-            // Wait a bit for the file to be processed on the server
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            // Force refresh the PDF URL to show updated content
-            const baseUrl = fileUrl.split("?")[0];
-            const refreshUrl = `${baseUrl}?v=${Date.now()}`;
-
-            console.log("Refreshing PDF URL from:", fileUrl, "to:", refreshUrl);
-
-            // Update state with new URL but keep annotations temporarily
+            // Clear annotations and unsaved changes immediately
             set({
-              fileUrl: refreshUrl,
+              hasUnsavedChanges: false,
+              textAnnotations: [],
+              highlights: [],
+              drawings: [],
             });
 
-            // Wait for PDF to load with new content, then clear annotations
-            setTimeout(() => {
-              set({
-                hasUnsavedChanges: false,
-                textAnnotations: [],
-                highlights: [],
-              });
-              console.log("Annotations cleared after PDF refresh");
-            }, 2000);
-
             console.log("PDF with annotations saved successfully");
+
+            // Wait a moment for the save to complete on server
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
+            // Force refresh the entire page to show updated PDF content
+            if (typeof window !== "undefined") {
+              console.log("Refreshing page to show updated PDF content");
+
+              // Try multiple methods to ensure refresh happens
+              try {
+                // Method 1: Force reload
+                window.location.reload();
+              } catch (reloadError) {
+                console.warn(
+                  "Reload failed, trying alternative method:",
+                  reloadError
+                );
+
+                // Method 2: Dispatch custom event as backup
+                const event = new CustomEvent("pdfRefresh");
+                window.dispatchEvent(event);
+
+                // Method 3: Force navigation refresh
+                setTimeout(() => {
+                  const currentUrl = window.location.href;
+                  window.location.href = currentUrl;
+                }, 100);
+              }
+            }
           } catch (error) {
             console.error("Failed to save PDF with annotations:", error);
             throw error;
@@ -513,11 +665,19 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
         markUnsavedChanges: () => set({ hasUnsavedChanges: true }),
         markChangesSaved: () => set({ hasUnsavedChanges: false }),
         refreshPDF: () => {
-          const { fileUrl } = get();
-          if (fileUrl) {
-            // Force refresh by adding timestamp to URL
-            const refreshUrl = `${fileUrl}?refresh=${Date.now()}`;
-            set({ fileUrl: refreshUrl });
+          if (typeof window !== "undefined") {
+            console.log("Force refreshing page to reload PDF content");
+
+            // Try multiple refresh methods
+            try {
+              window.location.reload();
+            } catch (error) {
+              console.warn(
+                "Standard reload failed, trying hard reload:",
+                error
+              );
+              window.location.href = window.location.href;
+            }
           }
         },
 
@@ -526,6 +686,7 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
           const {
             highlights,
             textAnnotations,
+            drawings,
             undoRedoHistory,
             undoRedoIndex,
             maxHistorySize,
@@ -535,6 +696,7 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
           const newEntry = {
             highlights: [...highlights],
             textAnnotations: [...textAnnotations],
+            drawings: [...drawings],
           };
 
           // Remove any history after current index (when we're not at the end)
@@ -564,6 +726,7 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
             set({
               highlights: [...historyEntry.highlights],
               textAnnotations: [...historyEntry.textAnnotations],
+              drawings: [...historyEntry.drawings],
               undoRedoIndex: newIndex,
               hasUnsavedChanges: true,
             });
@@ -580,6 +743,7 @@ export const usePDFViewerStore = create<PDFViewerStore>()(
             set({
               highlights: [...historyEntry.highlights],
               textAnnotations: [...historyEntry.textAnnotations],
+              drawings: [...historyEntry.drawings],
               undoRedoIndex: newIndex,
               hasUnsavedChanges: true,
             });

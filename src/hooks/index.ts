@@ -31,6 +31,7 @@ export { usePDFTextSelection } from "./usePDFTextSelection";
 export { usePDFDocumentHandlers } from "./usePDFDocumentHandlers";
 export { usePDFSearch } from "./usePDFSearch";
 export { usePDFHighlight } from "./usePDFHighlight";
+export { useTextSelection } from "./useTextSelection";
 
 // App status hooks
 export { useAppStatus } from "./useAppStatus";

@@ -26,10 +26,22 @@ interface Highlight {
   color: string;
 }
 
+interface Drawing {
+  id: string;
+  pageNumber: number;
+  paths: {
+    x: number;
+    y: number;
+  }[][];
+  color: string;
+  strokeWidth: number;
+}
+
 export async function modifyPDFWithAnnotations(
   pdfBytes: ArrayBuffer,
   textAnnotations: TextAnnotation[],
-  highlights: Highlight[]
+  highlights: Highlight[],
+  drawings: Drawing[] = []
 ): Promise<Uint8Array> {
   try {
     // Load the existing PDF
@@ -110,6 +122,44 @@ export async function modifyPDFWithAnnotations(
       }
     });
 
+    // Add drawings
+    drawings.forEach((drawing) => {
+      const pageIndex = drawing.pageNumber - 1;
+      if (pageIndex >= 0 && pageIndex < pages.length) {
+        const page = pages[pageIndex];
+        const { width: pageWidth, height: pageHeight } = page.getSize();
+
+        // Draw each path in the drawing
+        drawing.paths.forEach((path) => {
+          if (path.length < 2) return; // Need at least 2 points to draw a line
+
+          // Start the path
+          const startPoint = path[0];
+          const startX = (startPoint.x / 100) * pageWidth;
+          const startY = pageHeight - (startPoint.y / 100) * pageHeight;
+
+          // Draw lines connecting all points in the path
+          for (let i = 1; i < path.length; i++) {
+            const prevPoint = path[i - 1];
+            const currentPoint = path[i];
+
+            const prevX = (prevPoint.x / 100) * pageWidth;
+            const prevY = pageHeight - (prevPoint.y / 100) * pageHeight;
+            const currentX = (currentPoint.x / 100) * pageWidth;
+            const currentY = pageHeight - (currentPoint.y / 100) * pageHeight;
+
+            // Draw line from previous point to current point
+            page.drawLine({
+              start: { x: prevX, y: prevY },
+              end: { x: currentX, y: currentY },
+              thickness: drawing.strokeWidth,
+              color: hexToRgb(drawing.color),
+            });
+          }
+        });
+      }
+    });
+
     // Save the modified PDF
     const modifiedPdfBytes = await pdfDoc.save();
     return modifiedPdfBytes;
@@ -123,6 +173,7 @@ export async function downloadModifiedPDF(
   originalPdfUrl: string,
   textAnnotations: TextAnnotation[],
   highlights: Highlight[],
+  drawings: Drawing[] = [],
   filename: string = "modified-document.pdf"
 ): Promise<void> {
   try {
@@ -138,7 +189,8 @@ export async function downloadModifiedPDF(
     const modifiedPdfBytes = await modifyPDFWithAnnotations(
       pdfBytes,
       textAnnotations,
-      highlights
+      highlights,
+      drawings
     );
 
     // Create blob and download
@@ -165,6 +217,7 @@ export async function saveModifiedPDFToSupabase(
   originalPdfUrl: string,
   textAnnotations: TextAnnotation[],
   highlights: Highlight[],
+  drawings: Drawing[],
   fileId: string,
   filename: string
 ): Promise<string> {
@@ -181,7 +234,8 @@ export async function saveModifiedPDFToSupabase(
     const modifiedPdfBytes = await modifyPDFWithAnnotations(
       pdfBytes,
       textAnnotations,
-      highlights
+      highlights,
+      drawings
     );
 
     // Convert to base64 for API transmission

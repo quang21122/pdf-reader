@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Box } from "@mui/material";
 import AuthGuard from "@/components/auth/AuthGuard";
 import {
@@ -11,6 +11,8 @@ import {
   PDFSearchDropdown,
   PDFSettingsDialog,
 } from "@/components/pdf";
+import PDFTranslateSidebar from "@/components/pdf/PDFTranslateSidebar";
+import { useTextSelection } from "@/hooks/useTextSelection";
 import { useFileViewer } from "@/hooks/useFileViewer";
 import { useFileViewerActions } from "@/hooks/useFileViewerActions";
 import { useFileViewerState } from "@/hooks";
@@ -23,22 +25,30 @@ import {
 
 function FileViewerContent() {
   const params = useParams();
+  const router = useRouter();
   const fileId = params.id as string;
 
   const { file, fileUrl, isLoading, error } = useFileViewer(fileId);
   const { handleDownload, handleOCR, handleBack } = useFileViewerActions();
   const {
     sidebarOpen,
+    sidebarTab,
+    translateSidebarOpen,
+    selectedTextForTranslation,
     searchDropdownOpen,
     searchAnchorEl,
     settingsDialogOpen,
     handleSidebarToggle,
     handleSidebarClose,
+    setSidebarTab,
     handleSearchOpen,
     handleSearchClose,
     handleSettingsOpen,
     handleSettingsClose,
     handleBookmark,
+    handleTranslateToggle,
+    handleTranslateClose,
+    handleTextSelected,
   } = useFileViewerState();
   const {
     numPages,
@@ -49,6 +59,9 @@ function FileViewerContent() {
     isFullscreen,
     showThumbnails,
     showBookmarks,
+    isDrawMode,
+    isEraseMode,
+    drawColor,
     isHighlightMode,
     isTextAnnotationMode,
     hasUnsavedChanges,
@@ -60,6 +73,8 @@ function FileViewerContent() {
     setCurrentPage,
     toggleFullscreen,
     toggleDrawMode,
+    toggleEraseMode,
+    setDrawColor,
     toggleTextAnnotationMode,
     toggleHighlightMode,
     saveAnnotations,
@@ -138,6 +153,9 @@ function FileViewerContent() {
     toggleHighlightMode();
   };
 
+  // Use text selection hook
+  useTextSelection(handleTextSelected);
+
   if (isLoading) {
     return <FileViewerLoading />;
   }
@@ -151,6 +169,9 @@ function FileViewerContent() {
         filename={file?.filename}
         isFullscreen={isFullscreen}
         viewMode={viewMode}
+        isDrawMode={isDrawMode}
+        isEraseMode={isEraseMode}
+        drawColor={drawColor}
         isHighlightMode={isHighlightMode}
         isTextAnnotationMode={isTextAnnotationMode}
         hasUnsavedChanges={hasUnsavedChanges}
@@ -162,6 +183,8 @@ function FileViewerContent() {
         onRedo={redo}
         onViewModeChange={setViewMode}
         onDrawToggle={toggleDrawMode}
+        onEraseToggle={toggleEraseMode}
+        onDrawColorChange={setDrawColor}
         onTextAnnotationToggle={toggleTextAnnotationMode}
         onHighlightToggle={handleHighlightToggle}
         onRotate={rotateClockwise}
@@ -172,6 +195,7 @@ function FileViewerContent() {
         onOCR={() => file && handleOCR(file)}
         onSettings={handleSettingsOpen}
         onBookmark={handleBookmark}
+        onTranslate={handleTranslateToggle}
       />
 
       <Box sx={{ height: "calc(100vh - 40px)", mt: "40px" }}>
@@ -196,6 +220,8 @@ function FileViewerContent() {
         numPages={numPages}
         currentPage={currentPage}
         onPageClick={handleSidebarPageClick}
+        activeTab={sidebarTab}
+        onTabChange={setSidebarTab}
       />
 
       <PDFSearchDropdown
@@ -219,6 +245,12 @@ function FileViewerContent() {
         onScaleChange={setScale}
         onToggleThumbnails={toggleThumbnails}
         onToggleBookmarks={toggleBookmarks}
+      />
+
+      <PDFTranslateSidebar
+        open={translateSidebarOpen}
+        onClose={handleTranslateClose}
+        selectedText={selectedTextForTranslation}
       />
     </Box>
   );

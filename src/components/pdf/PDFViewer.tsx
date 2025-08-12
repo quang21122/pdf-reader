@@ -32,10 +32,15 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
     viewMode,
     isLoading,
     error,
+    isDrawMode,
+    isEraseMode,
+    drawColor,
+    drawStrokeWidth,
     isHighlightMode,
     isTextAnnotationMode,
     highlights,
     textAnnotations,
+    drawings,
     setNumPages,
     setCurrentPage,
     setLoading,
@@ -47,6 +52,9 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
     getHighlightsForPage,
     addTextAnnotation,
     getTextAnnotationsForPage,
+    addDrawing,
+    getDrawingsForPage,
+    removeDrawing,
     setTextAnnotationMode,
   } = usePDFViewerStore();
 
@@ -70,12 +78,28 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
   // Force reload PDF when URL changes (after save)
   useEffect(() => {
     if (fileUrl && fileUrl.includes("?v=")) {
-      console.log("PDF URL changed, forcing reload:", fileUrl);
       // Clear any cached PDF data
       setLoading(true);
       setError(null);
     }
   }, [fileUrl, setLoading, setError]);
+
+  // Add event listener for custom refresh events
+  useEffect(() => {
+    const handleCustomRefresh = () => {
+      if (fileUrl) {
+        // Force refresh by updating URL with timestamp
+        const baseUrl = fileUrl.split("?")[0];
+        const refreshUrl = `${baseUrl}?refresh=${Date.now()}`;
+        setFileUrl(refreshUrl);
+        setLoading(true);
+        setError(null);
+      }
+    };
+
+    window.addEventListener("pdfRefresh", handleCustomRefresh);
+    return () => window.removeEventListener("pdfRefresh", handleCustomRefresh);
+  }, [fileUrl, setFileUrl, setLoading, setError]);
 
   // Handle text highlighting
   useEffect(() => {
@@ -208,6 +232,183 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
     };
   }, [isTextAnnotationMode, addTextAnnotation, setTextAnnotationMode]);
 
+  // Handle drawing mode
+  useEffect(() => {
+    if (!isDrawMode || !documentRef.current) return;
+
+    let isDrawing = false;
+    let currentPath: { x: number; y: number }[] = [];
+    let currentPageNumber = 1;
+    let currentCanvas: HTMLCanvasElement | null = null;
+    let currentContext: CanvasRenderingContext2D | null = null;
+
+    const createTemporaryCanvas = (pageContainer: Element) => {
+      // Remove any existing temporary canvas
+      const existingCanvas = pageContainer.querySelector(
+        ".temporary-drawing-canvas"
+      );
+      if (existingCanvas) {
+        existingCanvas.remove();
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.className = "temporary-drawing-canvas";
+      canvas.style.position = "absolute";
+      canvas.style.top = "0";
+      canvas.style.left = "0";
+      canvas.style.pointerEvents = "none";
+      canvas.style.zIndex = "10";
+
+      const rect = pageContainer.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+
+      pageContainer.appendChild(canvas);
+      return canvas;
+    };
+
+    const handleMouseDown = (event: MouseEvent) => {
+      if (!isDrawMode) return;
+
+      try {
+        const target = event.target as HTMLElement;
+        const pageElement = target.closest('[id^="page_"]');
+        if (!pageElement) return;
+
+        const pageId = pageElement.id;
+        const pageMatch = pageId.match(/page_(\d+)/);
+        if (!pageMatch) return;
+
+        currentPageNumber = parseInt(pageMatch[1], 10);
+        const pageContainer = pageElement.querySelector(
+          ".react-pdf__Page"
+        ) as HTMLElement;
+        if (!pageContainer) return;
+
+        const containerRect = pageContainer.getBoundingClientRect();
+        if (containerRect.width === 0 || containerRect.height === 0) return;
+
+        // Create temporary canvas for real-time drawing
+        currentCanvas = createTemporaryCanvas(pageContainer);
+        currentContext = currentCanvas.getContext("2d");
+
+        if (currentContext) {
+          currentContext.strokeStyle = drawColor;
+          currentContext.lineWidth = drawStrokeWidth;
+          currentContext.lineCap = "round";
+          currentContext.lineJoin = "round";
+        }
+
+        const relativePosition = {
+          x: ((event.clientX - containerRect.x) / containerRect.width) * 100,
+          y: ((event.clientY - containerRect.y) / containerRect.height) * 100,
+        };
+
+        isDrawing = true;
+        currentPath = [relativePosition];
+
+        // Start drawing on canvas
+        if (currentContext) {
+          currentContext.beginPath();
+          const canvasX = (relativePosition.x / 100) * currentCanvas.width;
+          const canvasY = (relativePosition.y / 100) * currentCanvas.height;
+          currentContext.moveTo(canvasX, canvasY);
+        }
+      } catch (error) {
+        console.warn("Error starting drawing:", error);
+      }
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isDrawing || !isDrawMode || !currentContext || !currentCanvas)
+        return;
+
+      try {
+        const target = event.target as HTMLElement;
+        const pageElement = target.closest('[id^="page_"]');
+        if (!pageElement) return;
+
+        const pageContainer = pageElement.querySelector(
+          ".react-pdf__Page"
+        ) as HTMLElement;
+        if (!pageContainer) return;
+
+        const containerRect = pageContainer.getBoundingClientRect();
+        if (containerRect.width === 0 || containerRect.height === 0) return;
+
+        const relativePosition = {
+          x: ((event.clientX - containerRect.x) / containerRect.width) * 100,
+          y: ((event.clientY - containerRect.y) / containerRect.height) * 100,
+        };
+
+        currentPath.push(relativePosition);
+
+        // Draw line on canvas
+        const canvasX = (relativePosition.x / 100) * currentCanvas.width;
+        const canvasY = (relativePosition.y / 100) * currentCanvas.height;
+        currentContext.lineTo(canvasX, canvasY);
+        currentContext.stroke();
+      } catch (error) {
+        console.warn("Error during drawing:", error);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (!isDrawing || currentPath.length < 2) {
+        isDrawing = false;
+        currentPath = [];
+
+        // Clean up temporary canvas
+        if (currentCanvas) {
+          currentCanvas.remove();
+          currentCanvas = null;
+          currentContext = null;
+        }
+        return;
+      }
+
+      // Create drawing data
+      const drawingData = {
+        pageNumber: currentPageNumber,
+        paths: [currentPath],
+        color: drawColor,
+        strokeWidth: drawStrokeWidth,
+      };
+
+      // Add drawing to store
+      addDrawing(drawingData);
+
+      isDrawing = false;
+      currentPath = [];
+
+      // Clean up temporary canvas
+      if (currentCanvas) {
+        currentCanvas.remove();
+        currentCanvas = null;
+        currentContext = null;
+      }
+    };
+
+    const documentElement = documentRef.current;
+    documentElement.addEventListener("mousedown", handleMouseDown);
+    documentElement.addEventListener("mousemove", handleMouseMove);
+    documentElement.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      documentElement.removeEventListener("mousedown", handleMouseDown);
+      documentElement.removeEventListener("mousemove", handleMouseMove);
+      documentElement.removeEventListener("mouseup", handleMouseUp);
+
+      // Clean up any remaining temporary canvas
+      const canvases = documentElement.querySelectorAll(
+        ".temporary-drawing-canvas"
+      );
+      canvases.forEach((canvas) => canvas.remove());
+    };
+  }, [isDrawMode, drawColor, drawStrokeWidth, addDrawing]);
+
   if (!fileUrl) {
     return <PDFEmptyState />;
   }
@@ -237,6 +438,10 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
             ? "crosshair"
             : isTextAnnotationMode
             ? "text"
+            : isDrawMode
+            ? "crosshair"
+            : isEraseMode
+            ? "pointer"
             : "default",
         }}
       >
@@ -245,6 +450,7 @@ export default function PDFViewer({ fileUrl, fileId }: PDFViewerProps) {
         {!isLoading && !error && (
           <Box
             ref={documentRef}
+            data-pdf-viewer="true"
             sx={{
               // Enable text selection
               userSelect: "text",

@@ -36,14 +36,19 @@ import {
   Save,
   Undo,
   Redo,
+  CleaningServices as EraseIcon,
+  Translate,
 } from "@mui/icons-material";
 
 interface PDFToolbarProps {
   filename?: string;
   isFullscreen?: boolean;
   viewMode?: "single" | "continuous";
+  isDrawMode?: boolean;
+  isEraseMode?: boolean;
   isHighlightMode?: boolean;
   isTextAnnotationMode?: boolean;
+  drawColor?: string;
   hasUnsavedChanges?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -53,6 +58,8 @@ interface PDFToolbarProps {
   onRedo?: () => void;
   onViewModeChange?: (mode: "single" | "continuous") => void;
   onDrawToggle?: () => void;
+  onEraseToggle?: () => void;
+  onDrawColorChange?: (color: string) => void;
   onTextAnnotationToggle?: () => void;
   onHighlightToggle?: () => void;
   onRotate?: () => void;
@@ -63,14 +70,18 @@ interface PDFToolbarProps {
   onOCR?: () => void;
   onSettings?: () => void;
   onBookmark?: () => void;
+  onTranslate?: () => void;
 }
 
 export default function PDFToolbar({
   filename = "Untitled Document",
   isFullscreen = false,
   viewMode = "continuous",
+  isDrawMode = false,
+  isEraseMode = false,
   isHighlightMode = false,
   isTextAnnotationMode = false,
+  drawColor = "#ff0000",
   hasUnsavedChanges = false,
   canUndo = false,
   canRedo = false,
@@ -80,6 +91,8 @@ export default function PDFToolbar({
   onRedo,
   onViewModeChange,
   onDrawToggle,
+  onEraseToggle,
+  onDrawColorChange,
   onTextAnnotationToggle,
   onHighlightToggle,
   onRotate,
@@ -90,10 +103,13 @@ export default function PDFToolbar({
   onOCR,
   onSettings,
   onBookmark,
+  onTranslate,
 }: PDFToolbarProps) {
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(
     null
   );
+  const [colorPickerAnchor, setColorPickerAnchor] =
+    useState<null | HTMLElement>(null);
 
   const handleMoreMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setMoreMenuAnchor(event.currentTarget);
@@ -102,6 +118,30 @@ export default function PDFToolbar({
   const handleMoreMenuClose = () => {
     setMoreMenuAnchor(null);
   };
+
+  const handleColorPickerOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setColorPickerAnchor(event.currentTarget);
+  };
+
+  const handleColorPickerClose = () => {
+    setColorPickerAnchor(null);
+  };
+
+  const handleColorChange = (color: string) => {
+    onDrawColorChange?.(color);
+    handleColorPickerClose();
+  };
+
+  const availableColors = [
+    "#ff0000", // Red
+    "#00ff00", // Green
+    "#0000ff", // Blue
+    "#ffff00", // Yellow
+    "#ff00ff", // Magenta
+    "#00ffff", // Cyan
+    "#000000", // Black
+    "#808080", // Gray
+  ];
 
   return (
     <AppBar
@@ -190,16 +230,6 @@ export default function PDFToolbar({
           />
 
           {/* Drawing and Text Tools */}
-          <Tooltip title="Draw">
-            <IconButton
-              onClick={onDrawToggle}
-              size="small"
-              sx={{ color: "#424242", p: 0.5 }}
-            >
-              <Draw fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
           <Tooltip title="Add Text Annotation">
             <IconButton
               onClick={onTextAnnotationToggle}
@@ -216,6 +246,67 @@ export default function PDFToolbar({
               }}
             >
               <TextFormat fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Draw">
+            <IconButton
+              onClick={onDrawToggle}
+              size="small"
+              sx={{
+                color: isDrawMode ? "#fff" : "#424242",
+                backgroundColor: isDrawMode ? "#9c27b0" : "transparent",
+                p: 0.5,
+                "&:hover": {
+                  backgroundColor: isDrawMode ? "#7b1fa2" : "#f5f5f5",
+                },
+              }}
+            >
+              <Draw fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          {isDrawMode && (
+            <Tooltip title="Choose Draw Color">
+              <IconButton
+                onClick={handleColorPickerOpen}
+                size="small"
+                sx={{
+                  color: "#424242",
+                  backgroundColor: "transparent",
+                  p: 0.5,
+                  "&:hover": {
+                    backgroundColor: "#f5f5f5",
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 16,
+                    height: 16,
+                    backgroundColor: drawColor,
+                    borderRadius: "50%",
+                    border: "2px solid #ccc",
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          <Tooltip title="Erase Drawings">
+            <IconButton
+              onClick={onEraseToggle}
+              size="small"
+              sx={{
+                color: isEraseMode ? "#fff" : "#424242",
+                backgroundColor: isEraseMode ? "#f44336" : "transparent",
+                p: 0.5,
+                "&:hover": {
+                  backgroundColor: isEraseMode ? "#d32f2f" : "#f5f5f5",
+                },
+              }}
+            >
+              <EraseIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
@@ -364,6 +455,17 @@ export default function PDFToolbar({
             </IconButton>
           </Tooltip>
 
+          {/* Translate */}
+          <Tooltip title="Translate">
+            <IconButton
+              onClick={onTranslate}
+              size="small"
+              sx={{ color: "#424242", p: 0.5 }}
+            >
+              <Translate fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
           {/* More Actions Menu */}
           <Tooltip title="More Actions">
             <IconButton
@@ -459,6 +561,50 @@ export default function PDFToolbar({
           </Tooltip>
         </Box>
       </Toolbar>
+
+      {/* Color Picker Menu */}
+      <Menu
+        anchorEl={colorPickerAnchor}
+        open={Boolean(colorPickerAnchor)}
+        onClose={handleColorPickerClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+      >
+        <Box
+          sx={{
+            p: 1,
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 1,
+          }}
+        >
+          {availableColors.map((color) => (
+            <Tooltip key={color} title={`Select ${color}`}>
+              <IconButton
+                onClick={() => handleColorChange(color)}
+                size="small"
+                sx={{
+                  width: 30,
+                  height: 30,
+                  backgroundColor: color,
+                  border:
+                    drawColor === color ? "3px solid #000" : "1px solid #ccc",
+                  "&:hover": {
+                    backgroundColor: color,
+                    opacity: 0.8,
+                  },
+                }}
+              />
+            </Tooltip>
+          ))}
+        </Box>
+      </Menu>
     </AppBar>
   );
 }

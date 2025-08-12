@@ -3,6 +3,7 @@ import { Document, Page } from "react-pdf";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import PDFHighlightOverlay from "./PDFHighlightOverlay";
 import PDFTextAnnotationOverlay from "./PDFTextAnnotationOverlay";
+import PDFDrawingOverlay from "./PDFDrawingOverlay";
 
 interface PDFDocumentProps {
   fileUrl: string;
@@ -63,6 +64,7 @@ export default function PDFDocument({
             />
             <PDFHighlightOverlay pageNumber={currentPage} />
             <PDFTextAnnotationOverlay pageNumber={currentPage} />
+            <PDFDrawingOverlay pageNumber={currentPage} />
           </Box>
         </Box>
       ) : (
@@ -90,6 +92,7 @@ export default function PDFDocument({
               />
               <PDFHighlightOverlay pageNumber={index + 1} />
               <PDFTextAnnotationOverlay pageNumber={index + 1} />
+              <PDFDrawingOverlay pageNumber={index + 1} />
             </Box>
           </Box>
         ))
