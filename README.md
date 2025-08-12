@@ -123,7 +123,7 @@ A modern PDF reader application built with Next.js, featuring OCR capabilities, 
 
    - Go to Storage in your Supabase dashboard
    - Create a new bucket named `pdf-files`
-   - Set appropriate policies for authenticated users
+   - Set appropriate policies for authenticated users.
 
 ## 🚀 Development
 
