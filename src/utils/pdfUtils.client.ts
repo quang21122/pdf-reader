@@ -10,21 +10,26 @@ export async function pdfToImages(
 ): Promise<string[]> {
   // Ensure we're in a browser environment
   if (typeof window === "undefined" || typeof document === "undefined") {
-    throw new Error(
-      "pdfToImages can only be used in a browser environment."
-    );
+    throw new Error("pdfToImages can only be used in a browser environment.");
   }
 
   try {
-    // Dynamic import to avoid server-side issues
-    const pdfjsLib = await import("pdfjs-dist");
+    console.log("PDF: Starting PDF to images conversion for:", pdfUrl);
 
-    // Configure PDF.js worker for client-side
+    // Dynamic import to avoid server-side issues
+    console.log("PDF: Importing PDF.js...");
+    const pdfjsLib = await import("pdfjs-dist");
+    console.log("PDF: PDF.js imported successfully");
+
+    // Use local worker file
+    console.log("PDF: Setting up local worker source");
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
     }
 
+    console.log("PDF: Loading PDF document...");
     const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+    console.log("PDF: PDF loaded successfully, pages:", pdf.numPages);
     const images: string[] = [];
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -68,9 +73,9 @@ export async function extractTextFromPDF(pdfUrl: string): Promise<string[]> {
     // Dynamic import to avoid server-side issues
     const pdfjsLib = await import("pdfjs-dist");
 
-    // Configure PDF.js worker for client-side
+    // Use local worker file
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
     }
 
     const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
@@ -107,9 +112,9 @@ export async function getPDFMetadata(pdfUrl: string) {
     // Dynamic import to avoid server-side issues
     const pdfjsLib = await import("pdfjs-dist");
 
-    // Configure PDF.js worker for client-side
+    // Use local worker file
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
     }
 
     const pdf = await pdfjsLib.getDocument(pdfUrl).promise;

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role key for server-side operations
+  process.env.SUPABASE_SERVICE_ROLE_KEY! 
 );
 
 export async function POST(request: NextRequest) {
@@ -17,10 +17,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert base64 back to buffer
     const buffer = Buffer.from(pdfBytes, "base64");
 
-    // Extract path from original URL (skip database lookup to avoid auth issues)
     if (!originalUrl) {
       return NextResponse.json(
         { error: "Original URL is required" },
@@ -30,8 +28,6 @@ export async function POST(request: NextRequest) {
 
     console.log("Original URL:", originalUrl);
 
-    // Parse the URL to extract bucket and file path
-    // Handle both signed URLs and public URLs
     const url = new URL(originalUrl);
     const pathname = url.pathname;
     console.log("URL pathname:", pathname);
@@ -39,7 +35,6 @@ export async function POST(request: NextRequest) {
     let bucketName: string;
     let filePath: string;
 
-    // Handle signed URLs: /storage/v1/object/sign/bucket/path/to/file
     if (pathname.includes("/object/sign/")) {
       const signMatch = pathname.match(/\/object\/sign\/([^\/]+)\/(.+)/);
       if (signMatch) {
@@ -53,7 +48,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    // Handle public URLs: /storage/v1/object/public/bucket/path/to/file
     else if (pathname.includes("/object/public/")) {
       const publicMatch = pathname.match(/\/object\/public\/([^\/]+)\/(.+)/);
       if (publicMatch) {
@@ -67,12 +61,10 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    // Fallback: try to extract from path segments
     else {
       const pathParts = pathname.split("/").filter((part) => part.length > 0);
       console.log("Path parts:", pathParts);
 
-      // Look for common patterns
       const objectIndex = pathParts.findIndex((part) => part === "object");
       if (objectIndex !== -1 && objectIndex + 2 < pathParts.length) {
         bucketName = pathParts[objectIndex + 2];
@@ -88,7 +80,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate extracted values
     if (!bucketName || !filePath) {
       return NextResponse.json(
         { error: `Invalid bucket (${bucketName}) or file path (${filePath})` },
@@ -96,7 +87,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update the file in storage
     console.log(
       `Updating file in bucket '${bucketName}' at path '${filePath}'`
     );
@@ -114,14 +104,12 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Supabase storage error:", error);
 
-      // Debug: List available buckets
       const { data: buckets } = await supabase.storage.listBuckets();
       console.log(
         "Available buckets:",
         buckets?.map((b) => b.name)
       );
 
-      // Debug: Try to list files in the detected bucket
       if (buckets?.find((b) => b.name === bucketName)) {
         const { data: files } = await supabase.storage.from(bucketName).list();
         console.log(
@@ -136,7 +124,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify the file was actually updated by checking its info
     const { data: fileInfo, error: infoError } = await supabase.storage
       .from(bucketName)
       .list(filePath.split("/").slice(0, -1).join("/"), {
@@ -148,9 +135,6 @@ export async function POST(request: NextRequest) {
     } else {
       console.log("File info after update:", fileInfo);
     }
-
-    // Skip database update to avoid auth issues
-    // The file in storage has been updated, which is the main goal
 
     return NextResponse.json({
       success: true,

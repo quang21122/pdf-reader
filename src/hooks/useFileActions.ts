@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PDFFile } from "./useFileManagement";
+import type { PDFFile } from "@/stores/types";
 
 /**
  * Custom hook for file actions and menu management

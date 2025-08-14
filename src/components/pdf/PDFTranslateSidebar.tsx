@@ -22,8 +22,6 @@ import {
   VolumeUp,
   Clear,
 } from "@mui/icons-material";
-// @ts-ignore
-import translate from "google-translate-api-browser";
 
 interface PDFTranslateSidebarProps {
   open: boolean;
@@ -66,19 +64,51 @@ export default function PDFTranslateSidebar({
   const [translatedText, setTranslatedText] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
 
+  const translateText = async (
+    text: string,
+    fromLang: string,
+    toLang: string
+  ) => {
+    const encodedText = encodeURIComponent(text);
+
+    const sourceLang = fromLang === "auto" ? "en" : fromLang;
+    const langPair = `${sourceLang}|${toLang}`;
+
+    const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${langPair}`;
+
+    console.log("Translation request:", {
+      text: text.substring(0, 50),
+      langPair,
+      url,
+    });
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    console.log("Translation response:", data);
+
+    if (data.responseStatus === 200) {
+      return {
+        text: data.responseData.translatedText,
+        from: { language: { iso: sourceLang } },
+      };
+    } else {
+      throw new Error(data.responseDetails || "Translation failed");
+    }
+  };
+
   const handleTranslate = React.useCallback(async () => {
     if (!sourceText.trim()) return;
 
     setIsTranslating(true);
     try {
-      const result = await translate(sourceText, {
-        from: sourceLanguage === "auto" ? "auto" : sourceLanguage,
-        to: targetLanguage,
-      });
-
+      const result = await translateText(
+        sourceText,
+        sourceLanguage,
+        targetLanguage
+      );
       setTranslatedText(result.text);
 
-      // If source was auto-detect, update the detected language
       if (sourceLanguage === "auto" && result.from?.language?.iso) {
         const detectedLang = result.from.language.iso;
         const langName = getLanguageName(detectedLang);
@@ -94,16 +124,13 @@ export default function PDFTranslateSidebar({
     }
   }, [sourceText, sourceLanguage, targetLanguage]);
 
-  // Update source text when selectedText prop changes
   React.useEffect(() => {
     if (selectedText && selectedText.trim()) {
       setSourceText(selectedText.trim());
-      // Clear previous translation when new text is selected
       setTranslatedText("");
     }
   }, [selectedText]);
 
-  // Notify parent when text is received
   React.useEffect(() => {
     if (sourceText && onTextReceived) {
       onTextReceived(sourceText);
@@ -142,19 +169,42 @@ export default function PDFTranslateSidebar({
     }
   };
 
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && open) {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onClose]);
+
   return (
     <Drawer
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: {
-          width: 400,
-          backgroundColor: "#2d2d2d",
-          color: "white",
-          marginTop: "40px",
-          height: "calc(100vh - 40px)",
-          borderRadius: 0,
+      variant="persistent"
+      slotProps={{
+        paper: {
+          sx: {
+            width: 400,
+            backgroundColor: "#2d2d2d",
+            color: "white",
+            marginTop: 0,
+            height: "calc(100vh - 40px)",
+            borderRadius: 0,
+            position: "fixed",
+            right: 0,
+            top: "40px", 
+            zIndex: 1200, 
+          },
         },
       }}
     >
@@ -168,10 +218,24 @@ export default function PDFTranslateSidebar({
           borderBottom: "1px solid #404040",
         }}
       >
-        <Typography variant="h6" sx={{ color: "white" }}>
-          Translate
-        </Typography>
-        <IconButton onClick={onClose} sx={{ color: "white" }}>
+        <Box>
+          <Typography variant="h6" sx={{ color: "white", mb: 0.5 }}>
+            Translate
+          </Typography>
+          <Typography variant="caption" sx={{ color: "#aaa" }}>
+            Select text from PDF to translate
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: "white",
+            "&:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+            },
+          }}
+          title="Close (Esc)"
+        >
           <Close />
         </IconButton>
       </Box>
@@ -277,11 +341,19 @@ export default function PDFTranslateSidebar({
             variant="body2"
             sx={{ color: "#aaa", fontSize: "0.85rem" }}
           >
-            1. Select any text from the PDF document
+            1. Click the Translate button in toolbar to open this panel
             <br />
-            2. Translation will appear automatically below
+            2. Select any text from the PDF document on the left
             <br />
-            3. Use the controls to copy or hear the translation
+            3. Selected text will appear here automatically
+            <br />
+            4. Click &quot;Translate&quot; to get the translation
+            <br />
+            5. Use the controls to copy or hear the translation
+            <br />
+            <br />
+            💡 <strong style={{ color: "#0078d4" }}>Tip:</strong> You can select
+            text from the PDF even when this sidebar is open!
           </Typography>
         </Box>
 
@@ -289,11 +361,12 @@ export default function PDFTranslateSidebar({
         <Paper
           sx={{
             backgroundColor: "#333",
-            border: "1px solid #555",
+            border: sourceText ? "1px solid #0078d4" : "1px solid #555",
             borderRadius: 1,
             p: 2,
             minHeight: 120,
             position: "relative",
+            transition: "border-color 0.3s ease",
           }}
         >
           {sourceText ? (
@@ -312,7 +385,7 @@ export default function PDFTranslateSidebar({
               <Box
                 sx={{
                   position: "absolute",
-                  top: 8,
+                  bottom: 8,
                   right: 8,
                   display: "flex",
                   gap: 0.5,
@@ -439,7 +512,7 @@ export default function PDFTranslateSidebar({
               <Box
                 sx={{
                   position: "absolute",
-                  top: 8,
+                  bottom: 8,
                   right: 8,
                   display: "flex",
                   gap: 0.5,

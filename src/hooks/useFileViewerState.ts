@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useCallback } from "react";
 
 export function useFileViewerState() {
@@ -61,21 +63,13 @@ export function useFileViewerState() {
     setTranslateSidebarOpen(false);
   }, []);
 
-  const handleTextSelected = useCallback(
-    (text: string) => {
-      setSelectedTextForTranslation(text);
-      if (!translateSidebarOpen) {
-        setTranslateSidebarOpen(true);
-      }
-
-      // Show a brief notification or feedback that text was captured
-      console.log(
-        "Text selected for translation:",
-        text.substring(0, 50) + "..."
-      );
-    },
-    [translateSidebarOpen]
-  );
+  const handleTextSelected = useCallback((text: string) => {
+    setSelectedTextForTranslation(text);
+    console.log(
+      "Text selected for translation:",
+      text.substring(0, 50) + "..."
+    );
+  }, []);
 
   return {
     // State

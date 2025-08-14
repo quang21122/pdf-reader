@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Container,
   Typography,
@@ -17,22 +17,33 @@ import {
   Description,
   History,
   TextFields,
+  Visibility,
 } from "@mui/icons-material";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
 import Navigation from "@/components/layout/Navigation";
 import { usePDFStore, useOCRStore, useSettingsStore } from "@/stores";
+import { useFileManagement } from "@/hooks/useFileManagement";
 
 export default function DashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
 
+  // File management hook
+  const { files, loading: filesLoading } = useFileManagement();
+
   // Zustand stores
-  const { files, isUploading } = usePDFStore();
+  const { isUploading } = usePDFStore();
   const { isProcessing } = useOCRStore();
   const { auto_ocr } = useSettingsStore();
 
-  const recentFiles = files.slice(0, 5); // Show last 5 files
+  // Sort files by upload date (newest first) and take the first 3
+  const recentFiles = [...files] // Create a copy to avoid mutating the original array
+    .sort(
+      (a, b) =>
+        new Date(b.upload_date).getTime() - new Date(a.upload_date).getTime()
+    )
+    .slice(0, 3);
 
   return (
     <Box sx={{ backgroundColor: "white", minHeight: "100vh" }}>
@@ -264,7 +275,7 @@ export default function DashboardContent() {
         {/* Recent Files Section */}
         <Box className="mt-10">
           <Typography variant="h5" className="font-bold text-gray-800 mb-4">
-            Recent Files ({files.length})
+            Recent Files ({filesLoading ? "..." : files.length})
           </Typography>
           <Card
             sx={{
@@ -274,7 +285,14 @@ export default function DashboardContent() {
             }}
           >
             <CardContent>
-              {recentFiles.length > 0 ? (
+              {filesLoading ? (
+                <Box className="text-center py-8">
+                  <LinearProgress className="mb-4" />
+                  <Typography variant="body2" className="text-gray-500">
+                    Loading recent files...
+                  </Typography>
+                </Box>
+              ) : recentFiles.length > 0 ? (
                 <Box>
                   {recentFiles.map((file) => (
                     <Box
@@ -309,13 +327,16 @@ export default function DashboardContent() {
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
                       >
                         <Chip
-                          label={file.status}
+                          label={file.status || "uploaded"}
                           size="small"
                           color={
-                            file.status === "ready"
+                            (file.status || "uploaded") === "ready" ||
+                            file.status === "uploaded"
                               ? "success"
                               : file.status === "processing"
                               ? "warning"
+                              : file.status === "uploading"
+                              ? "info"
                               : file.status === "error"
                               ? "error"
                               : "default"
@@ -329,11 +350,26 @@ export default function DashboardContent() {
                             icon={<TextFields />}
                           />
                         )}
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Visibility />}
+                          onClick={() => router.push(`/files/${file.id}`)}
+                          sx={{
+                            backgroundColor: "#1976d2",
+                            "&:hover": {
+                              backgroundColor: "#1565c0",
+                            },
+                            minWidth: "80px",
+                          }}
+                        >
+                          View
+                        </Button>
                       </Box>
                     </Box>
                   ))}
 
-                  {files.length > 5 && (
+                  {files.length > 3 && (
                     <Box className="text-center mt-4">
                       <Button
                         variant="outlined"

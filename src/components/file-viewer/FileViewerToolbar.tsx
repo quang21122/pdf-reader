@@ -1,7 +1,7 @@
 import React from "react";
 import { AppBar, Toolbar, Typography, IconButton } from "@mui/material";
 import { ArrowBack, Download, TextFields } from "@mui/icons-material";
-import type { PDFFile } from "@/hooks/useFileManagement";
+import type { PDFFile } from "@/stores/types";
 
 interface FileViewerToolbarProps {
   file?: PDFFile | null;

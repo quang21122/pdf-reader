@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useCallback, useEffect } from "react";
 import { useOCRProgress } from "./useOCRProgress";
 import { useLanguageSelection } from "./useLanguageSelection";
@@ -88,18 +90,24 @@ export function useOCR(options: OCROptions = {}) {
       progressHook.startProgress();
 
       try {
+        console.log("Starting OCR process for:", pdfUrl);
+        console.log("Selected language:", languageHook.selectedLanguage);
+
         // Dynamically import client-only OCR utilities
         const { extractTextFromPDFWithOCR } = await import(
           "@/utils/ocrUtils.client"
         );
+        console.log("OCR utilities imported successfully");
 
         const ocrResults = await extractTextFromPDFWithOCR(pdfUrl, {
           language: languageHook.selectedLanguage,
           onProgress: (progressData) => {
+            console.log("OCR Progress:", progressData);
             progressHook.updateProgress(progressData);
             options.onProgress?.(progressData);
           },
         });
+        console.log("OCR completed successfully:", ocrResults);
 
         setResults(ocrResults);
         options.onResults?.(ocrResults);

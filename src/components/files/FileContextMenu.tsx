@@ -1,15 +1,7 @@
 import React from "react";
-import {
-  Menu,
-  MenuItem,
-} from "@mui/material";
-import {
-  Visibility,
-  TextFields,
-  Download,
-  Delete,
-} from "@mui/icons-material";
-import type { PDFFile } from "@/hooks/useFileManagement";
+import { Menu, MenuItem } from "@mui/material";
+import { Visibility, TextFields, Download, Delete } from "@mui/icons-material";
+import type { PDFFile } from "@/stores/types";
 
 interface FileContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -33,11 +25,7 @@ export default function FileContextMenu({
   onDelete,
 }: FileContextMenuProps) {
   return (
-    <Menu
-      anchorEl={anchorEl}
-      open={open}
-      onClose={onClose}
-    >
+    <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
       <MenuItem onClick={() => selectedFile && onView(selectedFile)}>
         <Visibility className="mr-2" />
         View
@@ -46,9 +34,7 @@ export default function FileContextMenu({
         <TextFields className="mr-2" />
         OCR
       </MenuItem>
-      <MenuItem
-        onClick={() => selectedFile && onDownload(selectedFile)}
-      >
+      <MenuItem onClick={() => selectedFile && onDownload(selectedFile)}>
         <Download className="mr-2" />
         Download
       </MenuItem>

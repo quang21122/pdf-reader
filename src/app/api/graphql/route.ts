@@ -6,7 +6,7 @@ import { resolvers } from "@/graphql/resolvers";
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  introspection: true, // Enable GraphQL Playground in development
+  introspection: true,
   includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
 });
 

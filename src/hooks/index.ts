@@ -73,4 +73,4 @@ export type {
 export type { PDFUrlState, UsePDFUrlOptions } from "./usePDFUrl";
 export type { SearchResult } from "./usePDFSearch";
 export type { NotificationOptions } from "./useNotifications";
-export type { PDFFile } from "./useFileManagement";
+export type { PDFFile } from "@/stores/types";

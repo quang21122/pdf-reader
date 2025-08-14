@@ -1,7 +1,7 @@
 import React from "react";
 import { Box } from "@mui/material";
 import FileCard from "./FileCard";
-import type { PDFFile } from "@/hooks/useFileManagement";
+import type { PDFFile } from "@/stores/types";
 
 interface FileGridProps {
   files: PDFFile[];

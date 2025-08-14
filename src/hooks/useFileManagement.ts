@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useNotifications } from "./useNotifications";
@@ -7,15 +9,7 @@ import {
   softDeletePDFFile,
   getPDFDownloadUrl,
 } from "@/utils/uploadUtils";
-
-export interface PDFFile {
-  id: string;
-  filename: string;
-  file_path: string;
-  file_size: number;
-  upload_date: string;
-  public_url?: string;
-}
+import type { PDFFile } from "@/stores/types";
 
 /**
  * Custom hook for managing PDF files
@@ -41,7 +35,13 @@ export const useFileManagement = () => {
       setLoading(true);
       setError(null);
       const userFiles = await getUserPDFFiles(user.id);
-      setFiles(userFiles);
+      // Add default status for files that don't have it
+      const filesWithStatus = userFiles.map((file: any) => ({
+        ...file,
+        status: file.status || "uploaded", // Default to uploaded for existing files
+        ocr_status: file.ocr_status || "pending",
+      }));
+      setFiles(filesWithStatus);
     } catch (err) {
       console.error("Error loading files:", err);
       const errorMessage =

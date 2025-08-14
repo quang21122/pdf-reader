@@ -78,19 +78,49 @@ export default function OCRProcessor({ pdfUrl, onResults }: OCRProcessorProps) {
 
   return (
     <Box className="ocr-processor">
-      <Paper className="p-6 mb-4">
-        <Typography variant="h6" className="mb-4">
+      <Paper
+        className="p-6 mb-4"
+        sx={{
+          backgroundColor: "white", // White background
+          color: "black",
+          boxShadow: "none", // Remove border/shadow
+          border: "none", // Remove border
+        }}
+      >
+        <Typography variant="h6" className="mb-4" sx={{ color: "black" }}>
           OCR Text Extraction
         </Typography>
 
-        <Box className="flex flex-col gap-4">
+        <Box className="flex flex-col gap-8 mt-4">
           <FormControl fullWidth>
-            <InputLabel>Language</InputLabel>
+            <InputLabel
+              sx={{
+                color: "rgba(0, 0, 0, 0.6)",
+                "&.Mui-focused": { color: "#1976d2" },
+              }}
+            >
+              Language
+            </InputLabel>
             <Select
               value={selectedLanguage}
               label="Language"
               onChange={handleLanguageChange}
               disabled={isProcessing}
+              sx={{
+                color: "black",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(0, 0, 0, 0.23)",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(0, 0, 0, 0.5)",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#1976d2",
+                },
+                "& .MuiSvgIcon-root": {
+                  color: "rgba(0, 0, 0, 0.54)",
+                },
+              }}
             >
               {supportedLanguages.map((lang) => (
                 <MenuItem key={lang.code} value={lang.code}>

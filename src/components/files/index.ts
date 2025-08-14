@@ -6,3 +6,4 @@ export { default as FileContextMenu } from "./FileContextMenu";
 export { default as DeleteConfirmDialog } from "./DeleteConfirmDialog";
 export { default as LoadingState } from "./LoadingState";
 export { default as FilesHeader } from "./FilesHeader";
+export { default as FilesContent } from "./FilesContent";

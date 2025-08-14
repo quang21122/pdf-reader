@@ -3,10 +3,10 @@ import { supabase } from "@/utils/supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 
-// Create authenticated Supabase client
+
 function getAuthenticatedSupabaseClient(token?: string) {
   if (!token) {
-    return supabase; // Fallback to default client
+    return supabase;
   }
 
   return createClient(
@@ -24,19 +24,16 @@ function getAuthenticatedSupabaseClient(token?: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authorization token from headers
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.replace("Bearer ", "");
 
     const authenticatedSupabase = getAuthenticatedSupabaseClient(token);
 
-    // Parse form data
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const user_id = formData.get("user_id") as string;
     const filename = formData.get("filename") as string;
 
-    // Validate file
     if (!file) {
       return NextResponse.json(
         { error: "No file provided" },
@@ -44,7 +41,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check file type - accept both MIME type and file extension
     const isValidPDF =
       file.type === "application/pdf" ||
       filename.toLowerCase().endsWith(".pdf");
@@ -58,7 +54,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check file size (50MB limit)
     const maxSize = 50 * 1024 * 1024; // 50MB in bytes
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -67,13 +62,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique file ID and path
     const fileId = uuidv4();
     const fileExtension = "pdf";
     const fileName = `${fileId}.${fileExtension}`;
     const filePath = `${user_id}/${fileName}`;
 
-    // Upload file to Supabase Storage
     const { error: uploadError } = await authenticatedSupabase.storage
       .from("pdf")
       .upload(filePath, file, {
@@ -89,12 +82,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the public URL for the uploaded file
     const { data: urlData } = authenticatedSupabase.storage
       .from("pdf")
       .getPublicUrl(filePath);
 
-    // Save file metadata to database
     const fileMetadata = {
       id: fileId,
       user_id: user_id,
@@ -113,7 +104,6 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Database insert error:", error);
-      // If database insert fails, clean up the uploaded file
       await authenticatedSupabase.storage.from("pdf").remove([filePath]);
       return NextResponse.json(
         { error: `Failed to save file metadata: ${error.message}` },

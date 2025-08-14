@@ -15,7 +15,7 @@ import {
   TextFields,
   Delete,
 } from "@mui/icons-material";
-import type { PDFFile } from "@/hooks/useFileManagement";
+import type { PDFFile } from "@/stores/types";
 import { fileUtils } from "@/hooks/useFileManagement";
 
 interface FileCardProps {

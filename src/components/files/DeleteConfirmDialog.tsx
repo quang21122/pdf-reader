@@ -7,7 +7,7 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import type { PDFFile } from "@/hooks/useFileManagement";
+import type { PDFFile } from "@/stores/types";
 
 interface DeleteConfirmDialogProps {
   open: boolean;

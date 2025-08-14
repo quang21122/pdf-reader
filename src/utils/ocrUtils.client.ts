@@ -24,10 +24,11 @@ export interface OCRResult {
 }
 
 /**
- * Extract text from PDF using OCR - CLIENT SIDE ONLY
+ * Extract text from file using OCR - CLIENT SIDE ONLY
+ * Supports both PDF and image files
  */
 export async function extractTextFromPDFWithOCR(
-  pdfUrl: string,
+  fileUrl: string,
   options: {
     language?: string;
     onProgress?: (progress: OCRProgress) => void;
@@ -41,37 +42,69 @@ export async function extractTextFromPDFWithOCR(
   const { language = "eng", onProgress } = options;
 
   try {
-    // Dynamic imports to avoid server-side issues
-    const [{ default: Tesseract }, { pdfToImages }] = await Promise.all([
-      import("tesseract.js"),
-      import("./pdfUtils.client")
-    ]);
+    console.log("OCR: Starting OCR process");
+    console.log("OCR: File URL:", fileUrl);
+    console.log("OCR: Language:", language);
 
-    // Convert PDF to images
-    onProgress?.({ status: "Converting PDF to images...", progress: 0 });
-    const images = await pdfToImages(pdfUrl);
+    // Import Tesseract
+    console.log("OCR: Importing Tesseract.js...");
+    const { default: Tesseract } = await import("tesseract.js");
+    console.log("OCR: Tesseract.js imported successfully");
+
+    // Detect file type
+    const isImage = await isImageFile(fileUrl);
+    console.log("OCR: File type detected:", isImage ? "Image" : "PDF");
+
+    let images: string[];
+
+    if (isImage) {
+      // Direct image processing
+      console.log("OCR: Processing image directly");
+      onProgress?.({ status: "Preparing image for OCR...", progress: 10 });
+      images = [fileUrl];
+    } else {
+      // PDF to images conversion
+      console.log("OCR: Converting PDF to images...");
+      onProgress?.({ status: "Converting PDF to images...", progress: 10 });
+
+      try {
+        images = await convertPDFToImages(fileUrl);
+        console.log("OCR: PDF converted to", images.length, "images");
+      } catch (pdfError) {
+        console.error("PDF conversion failed:", pdfError);
+        throw new Error(
+          "Cannot process PDF file. Please try uploading an image file (PNG, JPG) instead, or use a different PDF file."
+        );
+      }
+    }
 
     const results: OCRResult[] = [];
     const totalPages = images.length;
 
     for (let i = 0; i < images.length; i++) {
       const pageNumber = i + 1;
+      console.log(`OCR: Processing page ${pageNumber}/${totalPages}`);
 
       onProgress?.({
         status: `Processing page ${pageNumber} of ${totalPages}...`,
-        progress: (i / totalPages) * 100,
+        progress: 10 + (i / totalPages) * 80,
       });
 
       const { data } = await Tesseract.recognize(images[i], language, {
         logger: (m) => {
           if (m.status === "recognizing text") {
+            const pageProgress = 10 + ((i + m.progress) / totalPages) * 80;
             onProgress?.({
               status: `OCR processing page ${pageNumber}...`,
-              progress: ((i + m.progress) / totalPages) * 100,
+              progress: pageProgress,
             });
           }
         },
       });
+
+      console.log(
+        `OCR: Page ${pageNumber} completed, confidence: ${data.confidence}`
+      );
 
       results.push({
         pageNumber,
@@ -91,11 +124,103 @@ export async function extractTextFromPDFWithOCR(
       });
     }
 
+    console.log("OCR: All pages completed successfully");
     onProgress?.({ status: "OCR completed!", progress: 100 });
     return results;
   } catch (error) {
     console.error("Error in OCR processing:", error);
     throw error;
+  }
+}
+
+/**
+ * Detect if file is an image based on URL or content
+ */
+async function isImageFile(fileUrl: string): Promise<boolean> {
+  try {
+    // Check by URL extension first
+    const url = new URL(fileUrl);
+    const pathname = url.pathname.toLowerCase();
+    if (
+      pathname.includes(".png") ||
+      pathname.includes(".jpg") ||
+      pathname.includes(".jpeg")
+    ) {
+      return true;
+    }
+
+    // Check by blob URL content type
+    if (fileUrl.startsWith("blob:")) {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      return blob.type.startsWith("image/");
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Convert PDF to images using react-pdf (simpler, no worker issues)
+ */
+async function convertPDFToImages(pdfUrl: string): Promise<string[]> {
+  console.log("PDF: Starting conversion with react-pdf");
+
+  try {
+    // Import PDF.js directly
+    const pdfjsLib = await import("pdfjs-dist");
+
+    // Set up worker source using local file
+    console.log("PDF: Setting up local worker source");
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+      console.log("PDF: Worker source set to local file");
+    }
+
+    // Fetch PDF as blob first
+    console.log("PDF: Fetching PDF file...");
+    const response = await fetch(pdfUrl);
+    const pdfBlob = await response.blob();
+    const pdfArrayBuffer = await pdfBlob.arrayBuffer();
+
+    console.log("PDF: PDF file loaded as array buffer");
+
+    // Load PDF with PDF.js
+    const pdf = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
+    console.log("PDF: Document loaded, pages:", pdf.numPages);
+
+    const images: string[] = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      console.log(`PDF: Rendering page ${pageNum}/${pdf.numPages}`);
+
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2 });
+
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d")!;
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+
+      await page.render(renderContext).promise;
+      const imageDataUrl = canvas.toDataURL("image/png");
+      images.push(imageDataUrl);
+
+      console.log(`PDF: Page ${pageNum} rendered successfully`);
+    }
+
+    console.log("PDF: All pages converted to images");
+    return images;
+  } catch (error) {
+    console.error("PDF conversion error:", error);
+    throw new Error(`Failed to convert PDF to images: ${error}`);
   }
 }
 

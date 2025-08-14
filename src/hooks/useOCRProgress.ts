@@ -1,11 +1,19 @@
-import { useState, useCallback } from 'react';
+"use client";
+
+import { useState, useCallback } from "react";
 
 export interface OCRProgress {
   status: string;
   progress: number;
   currentPage?: number;
   totalPages?: number;
-  stage?: 'loading' | 'converting' | 'processing' | 'extracting' | 'completed' | 'error';
+  stage?:
+    | "loading"
+    | "converting"
+    | "processing"
+    | "extracting"
+    | "completed"
+    | "error";
 }
 
 /**
@@ -18,72 +26,86 @@ export function useOCRProgress() {
   const startProgress = useCallback((totalPages?: number) => {
     setIsProcessing(true);
     setProgress({
-      status: 'Starting OCR processing...',
+      status: "Starting OCR processing...",
       progress: 0,
       totalPages,
-      stage: 'loading'
+      stage: "loading",
     });
   }, []);
 
   const updateProgress = useCallback((update: Partial<OCRProgress>) => {
-    setProgress(prev => {
+    setProgress((prev) => {
       if (!prev) return null;
       return { ...prev, ...update };
     });
   }, []);
 
-  const setLoadingStage = useCallback((status: string) => {
-    updateProgress({
-      status,
-      stage: 'loading',
-      progress: 10
-    });
-  }, [updateProgress]);
+  const setLoadingStage = useCallback(
+    (status: string) => {
+      updateProgress({
+        status,
+        stage: "loading",
+        progress: 10,
+      });
+    },
+    [updateProgress]
+  );
 
-  const setConvertingStage = useCallback((status: string, progress: number = 25) => {
-    updateProgress({
-      status,
-      stage: 'converting',
-      progress
-    });
-  }, [updateProgress]);
+  const setConvertingStage = useCallback(
+    (status: string, progress: number = 25) => {
+      updateProgress({
+        status,
+        stage: "converting",
+        progress,
+      });
+    },
+    [updateProgress]
+  );
 
-  const setProcessingStage = useCallback((status: string, currentPage?: number, totalPages?: number) => {
-    const progress = currentPage && totalPages 
-      ? 30 + (currentPage / totalPages) * 60 
-      : 50;
-    
-    updateProgress({
-      status,
-      stage: 'processing',
-      progress,
-      currentPage,
-      totalPages
-    });
-  }, [updateProgress]);
+  const setProcessingStage = useCallback(
+    (status: string, currentPage?: number, totalPages?: number) => {
+      const progress =
+        currentPage && totalPages ? 30 + (currentPage / totalPages) * 60 : 50;
 
-  const setExtractingStage = useCallback((status: string, progress: number = 90) => {
-    updateProgress({
-      status,
-      stage: 'extracting',
-      progress
-    });
-  }, [updateProgress]);
+      updateProgress({
+        status,
+        stage: "processing",
+        progress,
+        currentPage,
+        totalPages,
+      });
+    },
+    [updateProgress]
+  );
 
-  const completeProgress = useCallback((status: string = 'OCR processing completed!') => {
-    setProgress({
-      status,
-      progress: 100,
-      stage: 'completed'
-    });
-    setIsProcessing(false);
-  }, []);
+  const setExtractingStage = useCallback(
+    (status: string, progress: number = 90) => {
+      updateProgress({
+        status,
+        stage: "extracting",
+        progress,
+      });
+    },
+    [updateProgress]
+  );
+
+  const completeProgress = useCallback(
+    (status: string = "OCR processing completed!") => {
+      setProgress({
+        status,
+        progress: 100,
+        stage: "completed",
+      });
+      setIsProcessing(false);
+    },
+    []
+  );
 
   const setError = useCallback((errorMessage: string) => {
     setProgress({
       status: errorMessage,
       progress: 0,
-      stage: 'error'
+      stage: "error",
     });
     setIsProcessing(false);
   }, []);
@@ -98,34 +120,34 @@ export function useOCRProgress() {
   };
 
   const getProgressStatus = (): string => {
-    return progress?.status || '';
+    return progress?.status || "";
   };
 
   const getCurrentStage = (): string => {
-    return progress?.stage || 'loading';
+    return progress?.stage || "loading";
   };
 
-  const isInStage = (stage: OCRProgress['stage']): boolean => {
+  const isInStage = (stage: OCRProgress["stage"]): boolean => {
     return progress?.stage === stage;
   };
 
   return {
     progress,
     isProcessing,
-    
+
     // Progress control
     startProgress,
     updateProgress,
     completeProgress,
     setError,
     resetProgress,
-    
+
     // Stage setters
     setLoadingStage,
     setConvertingStage,
     setProcessingStage,
     setExtractingStage,
-    
+
     // Getters
     getProgressPercentage,
     getProgressStatus,

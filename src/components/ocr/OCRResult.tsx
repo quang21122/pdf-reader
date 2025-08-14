@@ -76,7 +76,7 @@ export default function OCRResult({
   if (isProcessing) {
     return (
       <Box className="p-4">
-        <Typography variant="h6" className="mb-4">
+        <Typography variant="h6" className="mb-4 text-black">
           OCR Processing...
         </Typography>
         <LinearProgress
@@ -84,7 +84,7 @@ export default function OCRResult({
           value={progress}
           className="mb-2"
         />
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" className="text-gray-600">
           {Math.round(progress)}% complete
         </Typography>
       </Box>
@@ -94,7 +94,7 @@ export default function OCRResult({
   if (results.length === 0) {
     return (
       <Box className="p-4 text-center">
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" className="text-gray-600">
           No OCR results available. Upload a PDF and run OCR to see extracted
           text.
         </Typography>
@@ -109,7 +109,7 @@ export default function OCRResult({
   return (
     <Box className="p-4">
       <Box className="mb-4">
-        <Typography variant="h6" className="mb-2">
+        <Typography variant="h6" className="mb-2 text-black">
           OCR Results
         </Typography>
         <Box className="flex items-center gap-2 mb-2">
@@ -117,6 +117,11 @@ export default function OCRResult({
             label={`${results.length} page${results.length !== 1 ? "s" : ""}`}
             size="small"
             variant="outlined"
+            sx={{
+              backgroundColor: "white",
+              color: "black",
+              borderColor: "rgba(0, 0, 0, 0.23)",
+            }}
           />
           <Chip
             label={`${getConfidenceLabel(totalConfidence)} (${Math.round(
@@ -139,10 +144,23 @@ export default function OCRResult({
 
       <Box className="space-y-2">
         {results.map((result) => (
-          <Accordion key={result.pageNumber}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Accordion
+            key={result.pageNumber}
+            sx={{
+              backgroundColor: "white",
+              color: "black",
+              "&:before": { display: "none" },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon sx={{ color: "black" }} />}
+              sx={{
+                backgroundColor: "white",
+                color: "black",
+              }}
+            >
               <Box className="flex items-center justify-between w-full mr-4">
-                <Typography variant="subtitle2">
+                <Typography variant="subtitle2" className="text-black">
                   Page {result.pageNumber}
                 </Typography>
                 <Box className="flex items-center gap-2">
@@ -160,19 +178,25 @@ export default function OCRResult({
                         | "warning"
                     }
                   />
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" className="text-gray-600">
                     {result.text.length} characters
                   </Typography>
                 </Box>
               </Box>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails
+              sx={{
+                backgroundColor: "white",
+                color: "black",
+              }}
+            >
               <Box>
                 <Box className="flex justify-end gap-1 mb-2">
                   <Tooltip title="Copy text">
                     <IconButton
                       size="small"
                       onClick={() => handleCopyText(result.text)}
+                      sx={{ color: "black" }}
                     >
                       <CopyIcon fontSize="small" />
                     </IconButton>
@@ -181,16 +205,24 @@ export default function OCRResult({
                     <IconButton
                       size="small"
                       onClick={() => handleSearchText(result.text)}
+                      sx={{ color: "black" }}
                     >
                       <SearchIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 </Box>
-                <Paper variant="outlined" className="p-3">
+                <Paper
+                  variant="outlined"
+                  className="p-3"
+                  sx={{
+                    backgroundColor: "white",
+                    color: "black",
+                  }}
+                >
                   <Typography
                     variant="body2"
                     component="pre"
-                    className="whitespace-pre-wrap font-mono text-sm"
+                    className="whitespace-pre-wrap font-mono text-sm text-black"
                   >
                     {result.text || "No text extracted from this page."}
                   </Typography>
@@ -199,8 +231,7 @@ export default function OCRResult({
                   <Box className="mt-3">
                     <Typography
                       variant="caption"
-                      color="text.secondary"
-                      className="mb-2 block"
+                      className="mb-2 block text-gray-600"
                     >
                       Word-level confidence (showing words with confidence &lt;
                       80%):

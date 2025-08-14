@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
-import type { PDFFile } from "@/hooks/useFileManagement";
+import type { PDFFile } from "@/stores/types";
 
 /**
  * Custom hook for file viewer actions

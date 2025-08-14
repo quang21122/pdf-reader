@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       { module: /node_modules\/punycode/ },
       /Critical dependency: the request of a dependency is an expression/,
     ];
+
     // Handle PDF.js worker for client-side
     if (!isServer) {
       config.resolve.alias = {

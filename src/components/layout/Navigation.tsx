@@ -19,7 +19,6 @@ import {
   Login,
   PersonAdd,
   Logout,
-  Settings,
   Dashboard,
   Description,
   Delete,
@@ -240,30 +239,6 @@ export default function Navigation() {
                     }}
                   >
                     Dashboard
-                  </ListItemText>
-                </MenuItem>
-
-                <MenuItem
-                  onClick={handleProfile}
-                  sx={{
-                    color: "#1e293b",
-                    "&:hover": {
-                      backgroundColor: "#f8fafc",
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: "#64748b" }}>
-                    <Settings fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    sx={{
-                      "& .MuiListItemText-primary": {
-                        color: "#1e293b",
-                        fontWeight: 500,
-                      },
-                    }}
-                  >
-                    Settings
                   </ListItemText>
                 </MenuItem>
 

@@ -12,8 +12,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // OCR processing is handled entirely on the client side
-    // This endpoint provides information about client-side OCR capabilities
     return NextResponse.json(
       {
         message:
