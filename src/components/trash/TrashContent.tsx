@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Box,
@@ -24,8 +24,8 @@ import {
 } from "@mui/icons-material";
 import Navigation from "@/components/layout/Navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useNotifications } from "@/hooks/useNotifications";
-import { apolloClient } from "@/graphql/client";
+import { useUIStore } from "@/stores";
+import { useQuery } from "@apollo/client";
 import { GET_DELETED_PDF_FILES } from "@/graphql/queries";
 import { restorePDFFile, deletePDFFile } from "@/utils/uploadUtils";
 import { useRouter } from "next/navigation";
@@ -42,11 +42,8 @@ interface DeletedPDFFile {
 
 export default function TrashContent() {
   const { user } = useAuth();
-  const notifications = useNotifications();
+  const { showSuccessNotification, showErrorNotification } = useUIStore();
   const router = useRouter();
-  const [files, setFiles] = useState<DeletedPDFFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -58,33 +55,25 @@ export default function TrashContent() {
     action: "restore",
   });
 
-  // Load deleted files
-  const loadDeletedFiles = useCallback(async () => {
-    if (!user) return;
+  // Memoize user ID to prevent unnecessary re-renders
+  const userId = useMemo(() => user?.id, [user?.id]);
 
-    try {
-      setLoading(true);
-      const { data } = await apolloClient.query({
-        query: GET_DELETED_PDF_FILES,
-        variables: { userId: user.id },
-        fetchPolicy: "network-only",
-      });
+  // Use Apollo's useQuery hook instead of manual query
+  const { data, loading, error, refetch } = useQuery(GET_DELETED_PDF_FILES, {
+    variables: { userId },
+    skip: !userId, // Skip query if no user ID
+    fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: false,
+  });
 
-      setFiles(data?.getDeletedPDFFiles || []);
-    } catch (err) {
-      console.error("Error loading deleted files:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load deleted files";
-      setError(errorMessage);
-      notifications.error("Load Failed", errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, notifications]);
+  const files = data?.getDeletedPDFFiles || [];
 
+  // Handle error notification separately to avoid re-render loops
   useEffect(() => {
-    loadDeletedFiles();
-  }, [user, loadDeletedFiles]);
+    if (error) {
+      showErrorNotification("Load Failed", error.message);
+    }
+  }, [error?.message]); // Only depend on error message
 
   // Handle restore file
   const handleRestore = async (file: DeletedPDFFile) => {
@@ -93,8 +82,9 @@ export default function TrashContent() {
     try {
       setActionLoading(file.id);
       await restorePDFFile(file.id, user.id);
-      setFiles((prev) => prev.filter((f) => f.id !== file.id));
-      notifications.success(
+      // Refetch data to update the list
+      refetch();
+      showSuccessNotification(
         "File Restored",
         `${file.filename} has been restored`
       );
@@ -102,7 +92,7 @@ export default function TrashContent() {
       console.error("Restore error:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Failed to restore file";
-      notifications.error("Restore Failed", errorMessage);
+      showErrorNotification("Restore Failed", errorMessage);
     } finally {
       setActionLoading(null);
     }
@@ -115,8 +105,9 @@ export default function TrashContent() {
     try {
       setActionLoading(file.id);
       await deletePDFFile(file.id, user.id);
-      setFiles((prev) => prev.filter((f) => f.id !== file.id));
-      notifications.success(
+      // Refetch data to update the list
+      refetch();
+      showSuccessNotification(
         "File Permanently Deleted",
         `${file.filename} has been permanently deleted`
       );
@@ -126,7 +117,7 @@ export default function TrashContent() {
         err instanceof Error
           ? err.message
           : "Failed to permanently delete file";
-      notifications.error("Delete Failed", errorMessage);
+      showErrorNotification("Delete Failed", errorMessage);
     } finally {
       setActionLoading(null);
     }
@@ -205,12 +196,8 @@ export default function TrashContent() {
         </Typography>
 
         {error && (
-          <Alert
-            severity="error"
-            className="mb-4"
-            onClose={() => setError(null)}
-          >
-            {error}
+          <Alert severity="error" className="mb-4">
+            {error.message}
           </Alert>
         )}
 
