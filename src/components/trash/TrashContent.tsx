@@ -73,7 +73,7 @@ export default function TrashContent() {
     if (error) {
       showErrorNotification("Load Failed", error.message);
     }
-  }, [error?.message]); // Only depend on error message
+  }, [error, showErrorNotification]); // Include all dependencies
 
   // Handle restore file
   const handleRestore = async (file: DeletedPDFFile) => {
@@ -230,7 +230,7 @@ export default function TrashContent() {
               gap: 3,
             }}
           >
-            {files.map((file) => (
+            {files.map((file: DeletedPDFFile) => (
               <Card
                 key={file.id}
                 sx={{
